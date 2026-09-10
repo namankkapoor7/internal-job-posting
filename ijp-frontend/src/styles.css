@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-blue: #0a66c2;
+  --dark-navy: #0b2a4a;
+  --light-blue: #e8f3ff;
+  --bg-light: #f7f9fc;
+  --text-dark: #1f2937;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-container {
+  flex: 1;
+}
+
+/* Navbar Header */
+.navbar-custom {
+  background-color: #0b2a4a !important;
+}
+
+/* Primary Headers & Banners */
+.bg-primary {
+  background-color: #0a66c2 !important;
+}
+
+.btn-primary {
+  background-color: #0a66c2 !important;
+  border-color: #0a66c2 !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #084e96 !important;
+  border-color: #084e96 !important;
+}
+
+.btn-outline-primary {
+  color: #0a66c2 !important;
+  border-color: #0a66c2 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0a66c2 !important;
+  color: #ffffff !important;
+}
+
+.text-primary {
+  color: #0a66c2 !important;
+}
+
+.badge.bg-primary {
+  background-color: #0a66c2 !important;
+}
+
+.nav-pills .nav-link.active, .nav-tabs .nav-link.active {
+  background-color: #0a66c2 !important;
+  color: #ffffff !important;
+}
+
+/* Simple Hero Section */
+.hero-simple {
+  background-color: #e8f3ff;
+  color: #0b2a4a;
+  padding: 3rem 0;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* Simple Job Card */
+.job-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.extra-small {
+  font-size: 0.75rem;
+}

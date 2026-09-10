@@ -1,0 +1,71 @@
+<div class="container my-5" style="max-width: 750px;">
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-primary text-white py-3 border-bottom">
+      <h4 class="mb-1 fw-bold"><i class="fa-solid fa-plus-circle me-2"></i>Add New Internal Job Posting</h4>
+      <p class="mb-0 small opacity-75">Create a new vacancy for internal candidates</p>
+    </div>
+    <div class="card-body p-4">
+
+      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small">
+        <i class="fa-solid fa-circle-exclamation me-1"></i> {{ errorMessage }}
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #jobForm="ngForm" autocomplete="off">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="jobId" class="form-label fw-semibold small">Job Code</label>
+            <input type="text" class="form-control" id="jobId" name="jobId" [(ngModel)]="job.jobId" required placeholder="Enter Job Code (e.g. JOB101)" autocomplete="off" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="designation" class="form-label fw-semibold small">Designation / Role</label>
+            <select class="form-select" id="designation" name="designation" [(ngModel)]="job.designation" required>
+              <option value="" disabled selected>Select Designation</option>
+              <option *ngFor="let desig of activeDesignations" [value]="desig.name">{{ desig.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="description" class="form-label fw-semibold small">Job Description</label>
+          <textarea class="form-control" id="description" name="description" rows="3" [(ngModel)]="job.description" required placeholder="Enter job description and key responsibilities"></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="location" class="form-label fw-semibold small">Location</label>
+            <input type="text" class="form-control" id="location" name="location" [(ngModel)]="job.location" required placeholder="Enter Location" autocomplete="off" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="experience" class="form-label fw-semibold small">Required Experience</label>
+            <input type="text" class="form-control" id="experience" name="experience" [(ngModel)]="job.experience" required placeholder="Enter Required Experience" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="skillSet" class="form-label fw-semibold small">Required Skill Set</label>
+          <input type="text" class="form-control" id="skillSet" name="skillSet" [(ngModel)]="job.skillSet" required placeholder="Enter Required Skills (e.g. Java, Angular, MySQL)" autocomplete="off" />
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <label for="salaryMin" class="form-label fw-semibold small">Minimum Salary (₹)</label>
+            <input type="number" class="form-control" id="salaryMin" name="salaryMin" [(ngModel)]="job.salaryMin" required placeholder="Enter Minimum Salary" />
+          </div>
+          <div class="col-md-6 mb-4">
+            <label for="salaryMax" class="form-label fw-semibold small">Maximum Salary (₹)</label>
+            <input type="number" class="form-control" id="salaryMax" name="salaryMax" [(ngModel)]="job.salaryMax" required placeholder="Enter Maximum Salary" />
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <a routerLink="/admin-dashboard" class="btn btn-outline-secondary px-4"><i class="fa-solid fa-arrow-left me-1"></i> Cancel</a>
+          <button type="submit" [disabled]="!jobForm.form.valid || isSubmitting" class="btn btn-primary px-5 fw-semibold py-2">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            Publish Job Posting
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>

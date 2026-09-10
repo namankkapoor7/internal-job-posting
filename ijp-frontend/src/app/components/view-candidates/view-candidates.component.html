@@ -1,0 +1,182 @@
+<div class="bg-primary text-white py-3 mb-4 shadow-sm">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="fa-solid fa-users me-2"></i>Job Applicants</h3>
+      <p class="small text-white-50 mb-0" *ngIf="jobDetails">
+        Candidates applied for <strong>{{ jobDetails.designation }}</strong> (Job ID: {{ jobDetails.jobId }})
+      </p>
+    </div>
+    <a routerLink="/admin-dashboard" class="btn btn-outline-light btn-sm">
+      <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="container mb-5">
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-primary">
+        <i class="fa-solid fa-user-check me-2"></i>Applied Candidates ({{ candidates.length }})
+      </h5>
+      <button class="btn btn-sm btn-outline-primary" (click)="loadCandidates()">
+        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body p-0">
+
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">Loading applicants...</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="p-4">
+        <div class="alert alert-danger mb-0 py-2 small">{{ errorMessage }}</div>
+      </div>
+
+      <div *ngIf="!isLoading && !errorMessage && candidates.length === 0" class="text-center py-5">
+        <i class="fa-solid fa-user-slash display-6 text-muted mb-2"></i>
+        <h6 class="fw-bold text-dark">No Applicants Yet</h6>
+        <p class="text-muted small">No candidates have applied for this job posting yet.</p>
+      </div>
+
+      <div *ngIf="!isLoading && candidates.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">ID</th>
+              <th>Employee ID</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Date of Birth</th>
+              <th>Application Status</th>
+              <th class="text-end pe-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let candidate of candidates">
+              <td class="ps-4 fw-semibold text-secondary">#{{ candidate.id }}</td>
+              <td><span class="badge bg-secondary px-2 py-1">{{ candidate.employeeId }}</span></td>
+              <td class="fw-bold text-dark">{{ candidate.firstName }} {{ candidate.lastName }}</td>
+              <td class="small">{{ candidate.email }}</td>
+              <td class="small">{{ candidate.dob }}</td>
+              <td>
+                <span class="badge px-3 py-1.5 fw-semibold" [ngClass]="{
+                  'bg-info text-dark': candidate.status === 'APPLIED' || !candidate.status,
+                  'bg-warning text-dark': candidate.status === 'SHORTLISTED',
+                  'bg-primary': candidate.status === 'INTERVIEW_SCHEDULED',
+                  'bg-success': candidate.status === 'SELECTED',
+                  'bg-danger': candidate.status === 'REJECTED'
+                }">
+                  {{ candidate.status || 'APPLIED' }}
+                </span>
+              </td>
+              <td class="text-end pe-4">
+                <div class="btn-group btn-group-sm">
+                  <!-- Shortlist -->
+                  <button *ngIf="candidate.status === 'APPLIED' || !candidate.status" class="btn btn-outline-warning" (click)="updateStatus(candidate.id!, 'SHORTLISTED')" title="Shortlist Candidate">
+                    Shortlist
+                  </button>
+                  <!-- Schedule Interview -->
+                  <button *ngIf="candidate.status === 'SHORTLISTED' || candidate.status === 'INTERVIEW_SCHEDULED'" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scheduleInterviewModal" (click)="openInterviewModal(candidate)" title="Schedule Interview">
+                    Schedule Interview
+                  </button>
+                  <!-- Select -->
+                  <button *ngIf="candidate.status !== 'SELECTED' && candidate.status !== 'REJECTED'" class="btn btn-outline-success" (click)="updateStatus(candidate.id!, 'SELECTED')" title="Select Candidate">
+                    Select
+                  </button>
+                  <!-- Reject -->
+                  <button *ngIf="candidate.status !== 'SELECTED' && candidate.status !== 'REJECTED'" class="btn btn-outline-danger" (click)="updateStatus(candidate.id!, 'REJECTED')" title="Reject Candidate">
+                    Reject
+                  </button>
+                  <!-- Delete Candidate Application -->
+                  <button class="btn btn-outline-danger" (click)="deleteCandidate(candidate)" title="Delete Employee Application">
+                    <i class="fa-solid fa-trash me-1"></i>Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Interview Modal -->
+<div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-3 border shadow-sm">
+      <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title mb-0 fw-bold" id="scheduleInterviewModalLabel">
+          <i class="fa-solid fa-calendar-plus me-2"></i>Schedule Interview
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+
+        <div *ngIf="selectedCandidateForInterview" class="alert alert-light border mb-3 small">
+          <h6 class="fw-bold mb-1">Candidate: {{ selectedCandidateForInterview.firstName }} {{ selectedCandidateForInterview.lastName }}</h6>
+          <p class="text-muted mb-0">Emp ID: {{ selectedCandidateForInterview.employeeId }} | Email: {{ selectedCandidateForInterview.email }}</p>
+        </div>
+
+        <div *ngIf="interviewSuccessMsg" class="alert alert-success py-2 small mb-3">
+          <i class="fa-solid fa-circle-check me-1"></i> {{ interviewSuccessMsg }}
+        </div>
+
+        <div *ngIf="interviewErrorMsg" class="alert alert-danger py-2 small mb-3">
+          <i class="fa-solid fa-circle-exclamation me-1"></i> {{ interviewErrorMsg }}
+        </div>
+
+        <form (ngSubmit)="submitScheduleInterview()">
+          
+          <!-- Interview Mode Dropdown -->
+          <div class="mb-3">
+            <label for="interviewMode" class="form-label fw-semibold small">Interview Mode</label>
+            <select id="interviewMode" name="interviewMode" class="form-select fw-semibold" [(ngModel)]="interviewData.interviewMode" required>
+              <option value="OFFLINE">OFFLINE (In-Person / Room)</option>
+              <option value="ONLINE">ONLINE (Video / Link)</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="interviewDate" class="form-label fw-semibold small">Interview Date</label>
+              <input type="date" class="form-control" id="interviewDate" name="interviewDate" [(ngModel)]="interviewData.interviewDate" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="interviewTime" class="form-label fw-semibold small">Interview Time</label>
+              <input type="text" class="form-control" id="interviewTime" name="interviewTime" [(ngModel)]="interviewData.interviewTime" required placeholder="Enter Time" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="interviewer" class="form-label fw-semibold small">Interviewer(s)</label>
+            <input type="text" class="form-control" id="interviewer" name="interviewer" [(ngModel)]="interviewData.interviewer" required placeholder="Enter Interviewer Name / Panel" />
+          </div>
+
+          <!-- OFFLINE: Meeting Room / Location Required -->
+          <div *ngIf="interviewData.interviewMode === 'OFFLINE'" class="mb-4">
+            <label for="location" class="form-label fw-semibold small">Meeting Room Name / Location <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="location" name="location" [(ngModel)]="interviewData.location" required placeholder="Enter Meeting Room Name" />
+          </div>
+
+          <!-- ONLINE: Meeting Link Required -->
+          <div *ngIf="interviewData.interviewMode === 'ONLINE'" class="mb-4">
+            <label for="meetingLink" class="form-label fw-semibold small">Online Meeting Link <span class="text-danger">*</span></label>
+            <input type="url" class="form-control" id="meetingLink" name="meetingLink" [(ngModel)]="interviewData.meetingLink" required placeholder="Enter Online Meeting Link" />
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
+            <button type="submit" [disabled]="isScheduling" class="btn btn-primary btn-sm px-4 fw-semibold">
+              <span *ngIf="isScheduling" class="spinner-border spinner-border-sm me-1"></span>
+              Confirm & Notify Candidate
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>

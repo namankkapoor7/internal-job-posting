@@ -1,0 +1,78 @@
+<div class="container py-5" style="max-width: 450px;">
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-white text-center py-3 border-bottom">
+      <h4 class="fw-bold text-primary mb-1"><i class="fa-solid fa-lock me-2"></i>IJP Portal Login</h4>
+      <p class="small text-muted mb-0">Internal Job Posting Authentication</p>
+    </div>
+
+    <div class="card-body p-4">
+      <!-- Role Switcher Tabs -->
+      <ul class="nav nav-pills nav-justified mb-4 bg-light p-1 rounded">
+        <li class="nav-item">
+          <button class="nav-link fw-semibold" [class.active]="activeTab === 'EMPLOYEE'" (click)="switchTab('EMPLOYEE')">
+            Employee Login
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link fw-semibold" [class.active]="activeTab === 'ADMIN'" (click)="switchTab('ADMIN')">
+            Admin Login
+          </button>
+        </li>
+      </ul>
+
+      <!-- Success Alert -->
+      <div *ngIf="successMessage" class="alert alert-success shadow-sm mb-4 py-2 small">
+        <i class="fa-solid fa-circle-check me-1"></i>{{ successMessage }}
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small">
+        <i class="fa-solid fa-circle-exclamation me-1"></i>{{ errorMessage }}
+      </div>
+
+      <!-- Employee Login Form -->
+      <form *ngIf="activeTab === 'EMPLOYEE'" (ngSubmit)="onEmployeeLogin()" autocomplete="off">
+        <div class="mb-3">
+          <label for="empEmail" class="form-label fw-semibold small">Email</label>
+          <input type="email" class="form-control" id="empEmail" name="employeeEmail" [(ngModel)]="employeeEmail" placeholder="Enter your company email" required autocomplete="off" />
+          <div class="form-text extra-small text-muted">Please use your company email ending with &#64;company.com.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="empPass" class="form-label fw-semibold small">Password</label>
+          <input type="password" class="form-control" id="empPass" name="employeePassword" [(ngModel)]="employeePassword" placeholder="Enter Password" required autocomplete="new-password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          Login as Employee
+        </button>
+
+        <div class="mt-3 text-center">
+          <span class="small text-muted">Don't have an account? </span>
+          <a routerLink="/register" class="small fw-semibold text-primary text-decoration-none">Register as Employee</a>
+        </div>
+      </form>
+
+      <!-- Admin Login Form -->
+      <form *ngIf="activeTab === 'ADMIN'" (ngSubmit)="onAdminLogin()" autocomplete="off">
+        <div class="mb-3">
+          <label for="adminEmail" class="form-label fw-semibold small">Admin Email</label>
+          <input type="email" class="form-control" id="adminEmail" name="adminUsername" [(ngModel)]="adminUsername" placeholder="Enter your company email" required autocomplete="off" />
+          <div class="form-text extra-small text-muted">Please use your company email ending with &#64;company.com.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="adminPass" class="form-label fw-semibold small">Password</label>
+          <input type="password" class="form-control" id="adminPass" name="adminPassword" [(ngModel)]="adminPassword" placeholder="Enter Admin Password" required autocomplete="new-password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          Login as Admin
+        </button>
+      </form>
+
+    </div>
+  </div>
+</div>

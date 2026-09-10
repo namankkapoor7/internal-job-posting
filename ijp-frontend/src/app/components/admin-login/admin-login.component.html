@@ -1,0 +1,36 @@
+<div class="container my-5" style="max-width: 450px;">
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-white text-center py-3 border-bottom">
+      <h4 class="fw-bold text-primary mb-1"><i class="fa-solid fa-user-shield me-2"></i>Admin Portal</h4>
+      <p class="small text-muted mb-0">Internal Job Posting Management System</p>
+    </div>
+    <div class="card-body p-4">
+
+      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small">
+        <i class="fa-solid fa-circle-exclamation me-1"></i> {{ errorMessage }}
+      </div>
+
+      <form (ngSubmit)="onLogin()" #loginForm="ngForm" autocomplete="off">
+        <div class="mb-3">
+          <label for="email" class="form-label fw-semibold small">Admin Email</label>
+          <input type="email" class="form-control" id="email" name="email" [(ngModel)]="email" required placeholder="Enter your company email" autocomplete="off" />
+          <div class="form-text extra-small text-muted">Please use your company email ending with &#64;company.com.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label fw-semibold small">Password</label>
+          <input type="password" class="form-control" id="password" name="password" [(ngModel)]="password" required placeholder="Enter Admin Password" autocomplete="new-password" />
+        </div>
+
+        <button type="submit" [disabled]="!loginForm.form.valid || isLoading" class="btn btn-primary w-100 py-2 fw-semibold">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          Login to Dashboard
+        </button>
+
+        <div class="text-center mt-3">
+          <a routerLink="/login" class="text-decoration-none small text-muted"><i class="fa-solid fa-arrow-left me-1"></i> Back to Main Login</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

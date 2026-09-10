@@ -1,0 +1,172 @@
+<div class="bg-primary text-white py-3 mb-4 shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fa-solid fa-user-graduate me-2"></i>Employee Dashboard
+            </h3>
+            <p class="small text-white-50 mb-0" *ngIf="currentUser">
+                Welcome, <strong>{{ currentUser.name }}</strong> (Emp ID: {{ currentUser.employeeId }})
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a routerLink="/notifications" class="btn btn-light text-primary btn-sm fw-semibold position-relative">
+                <i class="fa-solid fa-bell me-1"></i> Notifications
+                <span
+                        *ngIf="unreadNotifCount > 0"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          {{ unreadNotifCount }}
+        </span>
+            </a>
+
+            <a routerLink="/" class="btn btn-outline-light btn-sm fw-semibold">
+                <i class="fa-solid fa-briefcase me-1"></i> Available Jobs
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">Loading dashboard...</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger mb-4 py-2 small">
+        {{ errorMessage }}
+    </div>
+
+    <div *ngIf="!isLoading && currentUser" class="row g-4">
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="fa-solid fa-id-card me-2"></i>My Profile
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="text-center mb-3">
+                        <div
+                                class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center border"
+                                style="width: 70px; height: 70px; font-size: 28px;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+
+                        <h5 class="fw-bold mt-2 mb-0">
+                            {{ currentUser.name }}
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            {{ currentUser.email }}
+                        </p>
+                    </div>
+
+                    <div class="border rounded p-3 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Employee ID:</span>
+                            <span class="fw-bold small">
+                {{ currentUser.employeeId }}
+              </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Role:</span>
+                            <span class="badge bg-primary">EMPLOYEE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border rounded-3 mb-4">
+
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="fa-solid fa-file-signature me-2"></i>My Job Applications
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+
+                    <div
+                            *ngIf="myApplications.length === 0"
+                            class="text-center py-4 p-3">
+
+                        <i class="fa-solid fa-folder-open display-6 text-muted mb-2"></i>
+
+                        <h6 class="fw-bold text-dark mb-1">
+                            No Active Applications
+                        </h6>
+
+                        <p class="text-muted small mb-3">
+                            Browse open internal job postings and apply today.
+                        </p>
+
+                        <a routerLink="/" class="btn btn-primary btn-sm">
+                            Browse Jobs
+                        </a>
+                    </div>
+
+                    <div
+                            *ngIf="myApplications.length > 0"
+                            class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Application ID</th>
+                                <th>Job ID</th>
+                                <th>Applied Email</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            <tr *ngFor="let app of myApplications">
+
+                                <td class="ps-4 fw-bold">
+                                    #{{ app.id }}
+                                </td>
+
+                                <td>
+                    <span class="badge bg-secondary">
+                      Job #{{ app.jobId }}
+                    </span>
+                                </td>
+
+                                <td class="small">
+                                    {{ app.email }}
+                                </td>
+
+                                <td>
+                    <span
+                            class="badge px-3 py-1.5 fw-bold"
+                            [ngClass]="{
+                        'bg-info text-dark': app.status === 'APPLIED' || !app.status,
+                        'bg-warning text-dark': app.status === 'SHORTLISTED',
+                        'bg-primary': app.status === 'INTERVIEW_SCHEDULED',
+                        'bg-success': app.status === 'SELECTED',
+                        'bg-danger': app.status === 'REJECTED'
+                      }">
+                      {{ app.status || 'APPLIED' }}
+                    </span>
+                                </td>
+
+                            </tr>
+                            </tbody>
+
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

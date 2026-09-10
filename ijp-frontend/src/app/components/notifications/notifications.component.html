@@ -1,0 +1,72 @@
+<div class="bg-primary text-white py-3 mb-4 shadow-sm">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="fa-solid fa-bell me-2"></i>Employee Notifications</h3>
+      <p class="small text-white-50 mb-0">Track application updates, interview schedules, and selection notices</p>
+    </div>
+    <span class="badge bg-light text-primary fs-6 px-3 py-1.5 rounded-pill">
+      <i class="fa-solid fa-envelope-open-text me-1"></i> {{ unreadCount }} Unread
+    </span>
+  </div>
+</div>
+
+<div class="container mb-5" style="max-width: 850px;">
+
+  <!-- Notifications List Card -->
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-primary">
+        <i class="fa-solid fa-inbox me-2"></i>Notification Inbox ({{ notifications.length }})
+      </h5>
+      <button class="btn btn-sm btn-outline-primary" (click)="loadNotifications()">
+        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body p-0 notification-list">
+
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">Loading notifications...</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="p-4">
+        <div class="alert alert-danger mb-0 py-2 small">{{ errorMessage }}</div>
+      </div>
+
+      <div *ngIf="!isLoading && !errorMessage && notifications.length === 0" class="text-center py-5">
+        <i class="fa-solid fa-bell-slash display-6 text-muted mb-2"></i>
+        <h6 class="fw-bold text-dark">No notifications yet.</h6>
+        <p class="text-muted small">You will receive updates here as your job application progresses.</p>
+      </div>
+
+      <div *ngIf="!isLoading && notifications.length > 0" class="list-group list-group-flush">
+        <div *ngFor="let notif of notifications" class="list-group-item p-4" [ngClass]="{'bg-light': !notif.isRead}">
+          <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge px-2.5 py-1.5 fw-semibold" [ngClass]="{
+                'bg-warning text-dark': notif.type === 'SHORTLISTED',
+                'bg-primary': notif.type === 'INTERVIEW_SCHEDULED',
+                'bg-success': notif.type === 'SELECTED',
+                'bg-danger': notif.type === 'REJECTED'
+              }">
+                {{ notif.type }}
+              </span>
+              <h6 class="mb-0 fw-bold text-dark">{{ notif.title }}</h6>
+              <span *ngIf="!notif.isRead" class="badge bg-danger rounded-pill px-2 py-0.5 small">NEW</span>
+            </div>
+            <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>{{ notif.createdAt }}</small>
+          </div>
+
+          <p class="mb-3 text-secondary small">{{ notif.message }}</p>
+
+          <div *ngIf="!notif.isRead" class="text-end">
+            <button class="btn btn-sm btn-outline-secondary" (click)="markAsRead(notif)">
+              <i class="fa-solid fa-check me-1"></i> Mark as Read
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

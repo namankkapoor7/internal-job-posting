@@ -1,0 +1,5 @@
+/* Notifications Component Styles */
+.notification-list {
+  overflow: visible !important;
+  max-height: none !important;
+}
