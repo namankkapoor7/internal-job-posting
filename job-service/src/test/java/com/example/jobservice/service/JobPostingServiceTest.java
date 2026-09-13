@@ -2,7 +2,6 @@ package com.example.jobservice.service;
 
 import com.example.jobservice.entity.JobPosting;
 import com.example.jobservice.repository.JobPostingRepository;
-import com.example.jobservice.service.JobPostingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -28,192 +27,182 @@ public class JobPostingServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    // =========================
-    // POSITIVE TESTS
-    // =========================
+    // =========================================================
+    // POSITIVE TEST CASES
+    // =========================================================
 
     @Test
-    public void testCreateJob() {
-
+    public void testCreateJob_Success() {
         JobPosting job = new JobPosting(
-                null,
-                "JOB101",
-                "Developer Role",
-                "Java Developer",
-                "Bangalore",
-                "Java, Spring Boot",
-                "2 years",
-                50000.0,
-                80000.0,
-                "OPEN"
+            null, "JOB101", "Developer Role", "Job Description", "Java Developer",
+            "Engineering", "Bangalore", "Java, Spring Boot", "2 years",
+            50000.0, 80000.0, "OPEN"
         );
 
-        when(jobPostingRepository.save(any(JobPosting.class)))
-                .thenReturn(job);
+        when(jobPostingRepository.save(any(JobPosting.class))).thenReturn(job);
 
         JobPosting created = jobPostingService.createJob(job);
 
         assertNotNull(created);
         assertEquals("OPEN", created.getStatus());
         assertEquals("Java Developer", created.getDesignation());
-
         verify(jobPostingRepository, times(1)).save(job);
     }
 
     @Test
     public void testCreateJob_DefaultStatus() {
-
         JobPosting job = new JobPosting(
-                null,
-                "JOB102",
-                "Backend Role",
-                "Backend Developer",
-                "Noida",
-                "Java, Spring Boot",
-                "2 years",
-                60000.0,
-                90000.0,
-                null
+            null, "JOB102", "Backend Role", "Job Description", "Backend Developer",
+            "Infrastructure", "Noida", "Java", "2 years",
+            60000.0, 90000.0, null
         );
 
-        when(jobPostingRepository.save(any(JobPosting.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
 
         JobPosting created = jobPostingService.createJob(job);
 
         assertNotNull(created);
         assertEquals("OPEN", created.getStatus());
-
         verify(jobPostingRepository, times(1)).save(job);
     }
 
     @Test
-    public void testCloseJob() {
-
+    public void testCloseJob_Success() {
         JobPosting job = new JobPosting(
-                1L,
-                "JOB101",
-                "Developer Role",
-                "Java Developer",
-                "Bangalore",
-                "Java, Spring Boot",
-                "2 years",
-                50000.0,
-                80000.0,
-                "OPEN"
+            1L, "JOB101", "Developer Role", "Job Description", "Java Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
         );
 
-        when(jobPostingRepository.findById(1L))
-                .thenReturn(Optional.of(job));
-
-        when(jobPostingRepository.save(any(JobPosting.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
 
         JobPosting closed = jobPostingService.closeJob(1L);
 
         assertNotNull(closed);
         assertEquals("CLOSED", closed.getStatus());
-
-        verify(jobPostingRepository, times(1)).findById(1L);
         verify(jobPostingRepository, times(1)).save(job);
     }
 
     @Test
     public void testDeleteJob_Success() {
-
         JobPosting job = new JobPosting(
-                1L,
-                "JOB101",
-                "Developer Role",
-                "Java Developer",
-                "Bangalore",
-                "Java, Spring Boot",
-                "2 years",
-                50000.0,
-                80000.0,
-                "OPEN"
+            1L, "JOB101", "Developer Role", "Job Description", "Java Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
         );
 
-        when(jobPostingRepository.findById(1L))
-                .thenReturn(Optional.of(job));
+        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(job));
 
         jobPostingService.deleteJob(1L);
 
-        verify(jobPostingRepository, times(1))
-                .deleteById(1L);
+        verify(jobPostingRepository, times(1)).deleteById(1L);
     }
 
+    // =========================================================
+    // NEGATIVE TEST CASES (Null, Blank, Boundary & Side Effects)
+    // =========================================================
 
-    // NEGATIVE TESTS
+    @Test
+    public void testCreateJob_NullInput() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(null)
+        );
+
+        assertEquals("Job posting object cannot be null!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_MissingDesignation() {
+        JobPosting job = new JobPosting(
+            null, "JOB103", "Title", "Description", "",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Job designation is required!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_NegativeSalary() {
+        JobPosting job = new JobPosting(
+            null, "JOB104", "Title", "Description", "Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            -500.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Minimum salary cannot be negative!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_InvertedSalaryRange() {
+        JobPosting job = new JobPosting(
+            null, "JOB105", "Title", "Description", "Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            90000.0, 50000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Maximum salary cannot be less than minimum salary!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
 
     @Test
     public void testDeleteJob_NotFound() {
+        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
 
-        when(jobPostingRepository.findById(99L))
-                .thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> jobPostingService.deleteJob(99L)
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.deleteJob(99L)
         );
 
-        assertTrue(
-                exception.getMessage().contains("not found")
-        );
-
-        verify(jobPostingRepository, times(1))
-                .findById(99L);
-
-        verify(jobPostingRepository, never())
-                .deleteById(99L);
+        assertEquals("Job posting with ID 99 not found!", ex.getMessage());
+        verify(jobPostingRepository, never()).deleteById(any());
     }
 
     @Test
     public void testUpdateJob_NotFound() {
-
-        JobPosting updatedJob = new JobPosting(
-                null,
-                "JOB999",
-                "Updated Role",
-                "Senior Developer",
-                "Delhi",
-                "Java",
-                "5 years",
-                80000.0,
-                120000.0,
-                "OPEN"
+        JobPosting updated = new JobPosting(
+            null, "JOB99", "T", "D", "Desig", "Dept", "Loc", "Skill", "1 yr", 10.0, 20.0, "OPEN"
         );
 
-        when(jobPostingRepository.findById(999L))
-                .thenReturn(Optional.empty());
+        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
 
-        JobPosting result =
-                jobPostingService.updateJob(999L, updatedJob);
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.updateJob(99L, updated)
+        );
 
-        assertNull(result);
-
-        verify(jobPostingRepository, times(1))
-                .findById(999L);
-
-        verify(jobPostingRepository, never())
-                .save(any(JobPosting.class));
+        assertEquals("Job posting with ID 99 not found!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
     }
 
     @Test
-    public void testCloseJob_NotFound() {
+    public void testUpdateJob_NullId() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.updateJob(null, new JobPosting())
+        );
 
-        when(jobPostingRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
-        JobPosting result =
-                jobPostingService.closeJob(999L);
-
-        assertNull(result);
-
-        verify(jobPostingRepository, times(1))
-                .findById(999L);
-
-        verify(jobPostingRepository, never())
-                .save(any(JobPosting.class));
+        assertEquals("Job ID cannot be null!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
     }
 }

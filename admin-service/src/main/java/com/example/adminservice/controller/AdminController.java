@@ -1,6 +1,8 @@
 package com.example.adminservice.controller;
 
+import com.example.adminservice.entity.Admin;
 import com.example.adminservice.entity.Designation;
+import com.example.adminservice.security.JwtUtil;
 import com.example.adminservice.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -17,6 +20,9 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> loginRequest) {
@@ -38,7 +44,15 @@ public class AdminController {
 
         try {
             if (adminService.validateLogin(emailTrimmed, password)) {
+                Optional<Admin> adminOpt = adminService.findByEmail(emailTrimmed);
+                Long id = adminOpt.map(Admin::getId).orElse(1L);
+                String token = jwtUtil.generateToken(emailTrimmed, "ADMIN", "HR001", id, "HR Admin");
+
                 response.put("message", "Login successful");
+                response.put("status", "SUCCESS");
+                response.put("token", token);
+                response.put("role", "ADMIN");
+                response.put("email", emailTrimmed);
                 return new ResponseEntity<>(response, HttpStatus.OK);
             } else {
                 response.put("message", "Invalid email or password");

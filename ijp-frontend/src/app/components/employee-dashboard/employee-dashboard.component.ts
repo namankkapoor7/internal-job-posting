@@ -2,71 +2,72 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService, UserSession } from '../../services/auth.service';
-import { CandidateService } from '../../services/candidate.service';
-import { Candidate } from '../../models/candidate.model';
+import { CandidateService, Application, AppNotification } from '../../services/candidate.service';
+import { JobService, JobPosting } from '../../services/job.service';
 
 @Component({
-    selector: 'app-employee-dashboard',
-    standalone: true,
-    imports: [CommonModule, RouterLink],
-    templateUrl: './employee-dashboard.component.html',
-    styleUrls: ['./employee-dashboard.component.css']
+  selector: 'app-employee-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './employee-dashboard.component.html',
+  styleUrls: ['./employee-dashboard.component.css']
 })
 export class EmployeeDashboardComponent implements OnInit {
 
-    currentUser: UserSession | null = null;
-    myApplications: Candidate[] = [];
-    unreadNotifCount = 0;
-    isLoading = false;
-    errorMessage = '';
+  currentUser: UserSession | null = null;
+  myApplications: Application[] = [];
+  notifications: AppNotification[] = [];
+  openJobs: JobPosting[] = [];
+  unreadCount = 0;
+  isLoading = false;
+  errorMessage = '';
 
-    constructor(
-        private authService: AuthService,
-        private candidateService: CandidateService
-    ) {}
+  constructor(
+    private authService: AuthService,
+    private candidateService: CandidateService,
+    private jobService: JobService
+  ) {}
 
-    ngOnInit(): void {
-        this.currentUser = this.authService.currentUserValue;
+  ngOnInit(): void {
+    this.currentUser = this.authService.currentUserValue;
+    this.loadDashboardData();
+  }
 
-        if (this.currentUser) {
-            this.loadEmployeeData();
-        }
-    }
+  loadDashboardData(): void {
+    this.isLoading = true;
+    this.candidateService.getMyApplications().subscribe({
+      next: (apps) => {
+        this.myApplications = apps;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      }
+    });
 
-    loadEmployeeData(): void {
-        this.isLoading = true;
-        this.errorMessage = '';
+    this.candidateService.getMyNotifications().subscribe({
+      next: (notifs) => {
+        this.notifications = notifs;
+        this.unreadCount = notifs.filter(n => !n.read).length;
+      }
+    });
 
-        if (this.currentUser?.employeeId) {
-            this.candidateService
-                .getApplicationsByEmployeeId(this.currentUser.employeeId)
-                .subscribe({
-                    next: (apps) => {
-                        this.myApplications = apps;
-                        this.isLoading = false;
-                    },
-                    error: (err) => {
-                        console.error(err);
-                        this.errorMessage = 'Could not fetch job applications.';
-                        this.isLoading = false;
-                    }
-                });
-        } else {
-            this.myApplications = [];
-            this.isLoading = false;
-        }
+    this.jobService.getPublishedJobs().subscribe({
+      next: (jobs) => {
+        this.openJobs = jobs.slice(0, 3);
+      }
+    });
+  }
 
-        if (this.currentUser?.id) {
-            this.candidateService
-                .getUnreadNotificationCount(this.currentUser.id)
-                .subscribe({
-                    next: (res) => {
-                        this.unreadNotifCount = res.count;
-                    },
-                    error: (err) => {
-                        console.error(err);
-                    }
-                });
-        }
-    }
+  getStatusClass(status: string): string {
+    const s = status ? status.toLowerCase() : 'submitted';
+    return `badge-${s}`;
+  }
+
+  get activeApplicationsCount(): number {
+    return this.myApplications.filter(app => {
+      const s = app.status ? app.status.toUpperCase() : '';
+      return s !== 'WITHDRAWN' && s !== 'REJECTED';
+    }).length;
+  }
 }

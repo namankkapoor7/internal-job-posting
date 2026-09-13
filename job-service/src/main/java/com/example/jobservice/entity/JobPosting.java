@@ -1,10 +1,7 @@
 package com.example.jobservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "job_posting")
@@ -15,16 +12,24 @@ public class JobPosting {
     private Long id;
 
     private String jobId;
+    private String title;
+    
+    @Column(length = 4000)
     private String description;
     private String designation;
+    private String department;
     private String location;
     private String skillSet;
     private String experience;
     private Double salaryMin;
     private Double salaryMax;
-    private String status; // "OPEN" or "CLOSED"
+    private String status; // DRAFT, PUBLISHED, PAUSED, CLOSED, EXPIRED
+    private LocalDateTime postedAt;
+    private String closingDate;
 
     public JobPosting() {
+        this.status = "OPEN";
+        this.postedAt = LocalDateTime.now();
     }
 
     public JobPosting(Long id, String jobId, String description, String designation, String location, 
@@ -38,7 +43,25 @@ public class JobPosting {
         this.experience = experience;
         this.salaryMin = salaryMin;
         this.salaryMax = salaryMax;
-        this.status = status;
+        this.status = status != null ? status : "OPEN";
+        this.postedAt = LocalDateTime.now();
+    }
+
+    public JobPosting(Long id, String jobId, String title, String description, String designation, String department,
+                      String location, String skillSet, String experience, Double salaryMin, Double salaryMax, String status) {
+        this.id = id;
+        this.jobId = jobId;
+        this.title = title;
+        this.description = description;
+        this.designation = designation;
+        this.department = department;
+        this.location = location;
+        this.skillSet = skillSet;
+        this.experience = experience;
+        this.salaryMin = salaryMin;
+        this.salaryMax = salaryMax;
+        this.status = status != null ? status : "OPEN";
+        this.postedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -57,6 +80,14 @@ public class JobPosting {
         this.jobId = jobId;
     }
 
+    public String getTitle() {
+        return title != null ? title : designation;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -71,6 +102,14 @@ public class JobPosting {
 
     public void setDesignation(String designation) {
         this.designation = designation;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
     }
 
     public String getLocation() {
@@ -119,5 +158,21 @@ public class JobPosting {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getPostedAt() {
+        return postedAt;
+    }
+
+    public void setPostedAt(LocalDateTime postedAt) {
+        this.postedAt = postedAt;
+    }
+
+    public String getClosingDate() {
+        return closingDate;
+    }
+
+    public void setClosingDate(String closingDate) {
+        this.closingDate = closingDate;
     }
 }

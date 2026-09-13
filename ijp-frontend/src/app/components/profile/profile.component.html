@@ -1,0 +1,86 @@
+<div class="container">
+  <div style="margin-bottom: 24px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">Employee Profile & Documents</h2>
+    <p style="color: var(--text-secondary); font-size: 13px;">Manage your internal identity details and uploaded resumes.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Profile Info Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Profile Information</span>
+      </div>
+
+      <div *ngIf="isLoading" style="color: var(--text-muted);">Loading profile...</div>
+
+      <div *ngIf="!isLoading && profile">
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Full Name</div>
+          <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">{{ profile.firstName }} {{ profile.lastName }}</div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Employee ID</div>
+          <div style="font-size: 14px; color: var(--text-primary);">{{ profile.employeeId }}</div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Company Email</div>
+          <div style="font-size: 14px; color: var(--text-primary);">{{ profile.email }}</div>
+        </div>
+
+        <div style="margin-bottom: 12px;" *ngIf="profile.designation">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Current Designation</div>
+          <div style="font-size: 14px; color: var(--text-primary);">{{ profile.designation }}</div>
+        </div>
+
+        <div style="margin-bottom: 12px;" *ngIf="profile.skills">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Skills Profile</div>
+          <div style="font-size: 13px; color: var(--text-primary); background: var(--bg-subtle); padding: 6px 10px; border-radius: var(--radius-sm);">
+            {{ profile.skills }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Manager Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Document & Resume Storage</span>
+      </div>
+
+      <!-- Messages -->
+      <div *ngIf="successMessage" class="badge badge-selected" style="width: 100%; padding: 8px; margin-bottom: 12px; text-transform: none;">
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="badge badge-rejected" style="width: 100%; padding: 8px; margin-bottom: 12px; text-transform: none;">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Upload Form -->
+      <div style="margin-bottom: 20px; padding: 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-subtle);">
+        <label style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 6px;">Upload New Resume/Document (PDF, DOCX, Max 10MB)</label>
+        <input type="file" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx,.txt" class="form-control" style="margin-bottom: 10px;">
+        <button (click)="uploadDocument()" class="btn btn-primary btn-sm" [disabled]="!selectedFile || isUploading" style="width: 100%;">
+          <span *ngIf="isUploading">Uploading Document...</span>
+          <span *ngIf="!isUploading">Upload Selected File</span>
+        </button>
+      </div>
+
+      <!-- Document List -->
+      <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Uploaded Documents ({{ documents.length }})</div>
+
+      <div *ngIf="documents.length === 0" style="font-size: 13px; color: var(--text-secondary); text-align: center; padding: 16px;">
+        No documents uploaded yet.
+      </div>
+
+      <div *ngFor="let doc of documents" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color);">
+        <div>
+          <div style="font-weight: 500; font-size: 13px;">📄 {{ doc.fileName }}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">{{ (doc.fileSize / 1024) | number:'1.0-0' }} KB · Uploaded {{ doc.uploadedAt | date:'shortDate' }}</div>
+        </div>
+        <a [href]="getDownloadUrl(doc.id)" target="_blank" class="btn btn-secondary btn-sm">Download</a>
+      </div>
+    </div>
+  </div>
+</div>

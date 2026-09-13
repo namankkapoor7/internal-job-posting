@@ -6,6 +6,7 @@ import com.example.adminservice.repository.AdminRepository;
 import com.example.adminservice.repository.DesignationRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -21,10 +22,12 @@ public class AdminService {
     @Autowired
     private DesignationRepository designationRepository;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @PostConstruct
     public void initSampleData() {
         if (adminRepository.findByEmail("admin@company.com").isEmpty()) {
-            Admin admin = new Admin(null, "admin@company.com", "admin123");
+            Admin admin = new Admin(null, "admin@company.com", passwordEncoder.encode("admin123"));
             adminRepository.save(admin);
         }
 
@@ -34,7 +37,9 @@ public class AdminService {
                     "Angular Developer",
                     "Full Stack Developer",
                     "Backend Engineer",
-                    "QA Engineer"
+                    "QA Engineer",
+                    "DevOps Lead",
+                    "Product Owner"
             );
             for (String name : defaultDesignations) {
                 designationRepository.save(new Designation(null, name, "ACTIVE"));
@@ -43,15 +48,38 @@ public class AdminService {
     }
 
     public boolean validateLogin(String email, String password) {
-        if (email == null || !email.trim().toLowerCase().endsWith("@company.com")) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required!");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new RuntimeException("Password is required!");
+        }
+        String emailTrimmed = email.trim().toLowerCase();
+        if (!emailTrimmed.contains("@")) {
+            throw new RuntimeException("Invalid email format!");
+        }
+        if (!emailTrimmed.endsWith("@company.com")) {
             throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
         }
-        Optional<Admin> admin = adminRepository.findByEmailAndPassword(email.trim(), password);
-        return admin.isPresent();
+        Optional<Admin> adminOpt = adminRepository.findByEmail(emailTrimmed);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (passwordEncoder.matches(password.trim(), admin.getPassword()) || password.trim().equals(admin.getPassword())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Optional<Admin> findByEmail(String email) {
+        return adminRepository.findByEmail(email.trim());
     }
 
     // Designation Master Management
     public Designation addDesignation(Designation designation) {
+        if (designation == null) {
+            throw new RuntimeException("Designation object cannot be null!");
+        }
         if (designation.getName() == null || designation.getName().trim().isEmpty()) {
             throw new RuntimeException("Designation name is required!");
         }

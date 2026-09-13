@@ -26,8 +26,16 @@ public class JobPostingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobPosting>> getAllJobs() {
-        List<JobPosting> jobs = jobPostingService.getAllJobs();
+    public ResponseEntity<List<JobPosting>> getJobs(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String designation,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String skill) {
+
+        if (status == null && designation == null && location == null && skill == null) {
+            return new ResponseEntity<>(jobPostingService.getAllJobs(), HttpStatus.OK);
+        }
+        List<JobPosting> jobs = jobPostingService.searchJobs(status, designation, location, skill);
         return new ResponseEntity<>(jobs, HttpStatus.OK);
     }
 
@@ -40,10 +48,8 @@ public class JobPostingController {
     @GetMapping("/{id}")
     public ResponseEntity<JobPosting> getJobById(@PathVariable Long id) {
         Optional<JobPosting> job = jobPostingService.getJobById(id);
-        if (job.isPresent()) {
-            return new ResponseEntity<>(job.get(), HttpStatus.OK);
-        }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return job.map(jobPosting -> new ResponseEntity<>(jobPosting, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @DeleteMapping("/{id}")
@@ -61,20 +67,39 @@ public class JobPostingController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<JobPosting> updateJob(@PathVariable Long id, @RequestBody JobPosting updatedJob) {
-        JobPosting result = jobPostingService.updateJob(id, updatedJob);
-        if (result != null) {
+    public ResponseEntity<?> updateJob(@PathVariable Long id, @RequestBody JobPosting updatedJob) {
+        try {
+            JobPosting result = jobPostingService.updateJob(id, updatedJob);
             return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("message", e.getMessage());
+            return new ResponseEntity<>(err, HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> updateJobStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            String status = body != null ? body.get("status") : null;
+            JobPosting result = jobPostingService.updateJobStatus(id, status);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("message", e.getMessage());
+            return new ResponseEntity<>(err, HttpStatus.NOT_FOUND);
+        }
     }
 
     @PutMapping("/{id}/close")
-    public ResponseEntity<JobPosting> closeJob(@PathVariable Long id) {
-        JobPosting result = jobPostingService.closeJob(id);
-        if (result != null) {
+    public ResponseEntity<?> closeJob(@PathVariable Long id) {
+        try {
+            JobPosting result = jobPostingService.closeJob(id);
             return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("message", e.getMessage());
+            return new ResponseEntity<>(err, HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }

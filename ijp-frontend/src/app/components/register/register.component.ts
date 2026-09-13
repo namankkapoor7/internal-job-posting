@@ -81,14 +81,14 @@ export class RegisterComponent {
     this.isSubmitting = true;
 
     this.candidateService.registerEmployee(this.candidate).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.isSubmitting = false;
         this.successMessage = 'Registration successful! Redirecting to login...';
         setTimeout(() => {
           this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
         }, 1500);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting = false;
         this.errorMessage = err.error?.message || 'Registration failed. Please check your details and try again.';
       }

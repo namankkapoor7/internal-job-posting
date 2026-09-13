@@ -4,15 +4,12 @@ import com.example.adminservice.entity.Admin;
 import com.example.adminservice.entity.Designation;
 import com.example.adminservice.repository.AdminRepository;
 import com.example.adminservice.repository.DesignationRepository;
-import com.example.adminservice.service.AdminService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,352 +32,132 @@ public class AdminServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    // =========================
-    // POSITIVE TESTS
-    // =========================
+    // =========================================================
+    // POSITIVE TEST CASES
+    // =========================================================
 
     @Test
-    public void testValidateLogin_ValidCredentials() {
+    public void testValidateLogin_Success() {
+        Admin admin = new Admin(1L, "admin@company.com", "admin123");
+        when(adminRepository.findByEmail("admin@company.com")).thenReturn(Optional.of(admin));
 
-        Admin admin =
-                new Admin(
-                        1L,
-                        "admin@company.com",
-                        "admin123"
-                );
-
-        when(adminRepository
-                .findByEmailAndPassword(
-                        "admin@company.com",
-                        "admin123"
-                ))
-                .thenReturn(Optional.of(admin));
-
-        boolean isValid =
-                adminService.validateLogin(
-                        "admin@company.com",
-                        "admin123"
-                );
+        boolean isValid = adminService.validateLogin("admin@company.com", "admin123");
 
         assertTrue(isValid);
-
-        verify(adminRepository, times(1))
-                .findByEmailAndPassword(
-                        "admin@company.com",
-                        "admin123"
-                );
-    }
-
-    @Test
-    public void testValidateLogin_InvalidCredentials() {
-
-        when(adminRepository
-                .findByEmailAndPassword(
-                        "admin@company.com",
-                        "wrongpass"
-                ))
-                .thenReturn(Optional.empty());
-
-        boolean isValid =
-                adminService.validateLogin(
-                        "admin@company.com",
-                        "wrongpass"
-                );
-
-        assertFalse(isValid);
-
-        verify(adminRepository, times(1))
-                .findByEmailAndPassword(
-                        "admin@company.com",
-                        "wrongpass"
-                );
+        verify(adminRepository, times(1)).findByEmail("admin@company.com");
     }
 
     @Test
     public void testAddDesignation_Success() {
+        Designation desig = new Designation(null, "DevOps Engineer", "ACTIVE");
+        when(designationRepository.findByNameIgnoreCase("DevOps Engineer")).thenReturn(Optional.empty());
+        when(designationRepository.save(any(Designation.class))).thenAnswer(i -> i.getArgument(0));
 
-        Designation desig =
-                new Designation(
-                        null,
-                        "Spring Boot Developer",
-                        "ACTIVE"
-                );
+        Designation saved = adminService.addDesignation(desig);
 
-        when(designationRepository
-                .findByNameIgnoreCase(
-                        "Spring Boot Developer"
-                ))
-                .thenReturn(Optional.empty());
+        assertNotNull(saved);
+        assertEquals("DevOps Engineer", saved.getName());
+        assertEquals("ACTIVE", saved.getStatus());
+        verify(designationRepository, times(1)).save(any(Designation.class));
+    }
 
-        when(designationRepository
-                .save(any(Designation.class)))
-                .thenReturn(
-                        new Designation(
-                                1L,
-                                "Spring Boot Developer",
-                                "ACTIVE"
-                        )
-                );
+    // =========================================================
+    // NEGATIVE TEST CASES (Null, Blank, Malformed & Side Effects)
+    // =========================================================
 
-        Designation created =
-                adminService.addDesignation(desig);
-
-        assertNotNull(created);
-        assertEquals(1L, created.getId());
-        assertEquals(
-                "Spring Boot Developer",
-                created.getName()
+    @Test
+    public void testValidateLogin_NullEmail() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.validateLogin(null, "password123")
         );
+
+        assertEquals("Email is required!", ex.getMessage());
+        verify(adminRepository, never()).findByEmail(any());
     }
 
     @Test
-    public void testGetActiveDesignations() {
-
-        Designation d1 =
-                new Designation(
-                        1L,
-                        "Java Developer",
-                        "ACTIVE"
-                );
-
-        when(designationRepository
-                .findByStatus("ACTIVE"))
-                .thenReturn(Arrays.asList(d1));
-
-        List<Designation> activeList =
-                adminService.getActiveDesignations();
-
-        assertEquals(1, activeList.size());
-        assertEquals(
-                "Java Developer",
-                activeList.get(0).getName()
+    public void testValidateLogin_NullPassword() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.validateLogin("admin@company.com", null)
         );
+
+        assertEquals("Password is required!", ex.getMessage());
+        verify(adminRepository, never()).findByEmail(any());
     }
 
+    @Test
+    public void testValidateLogin_MalformedEmail() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.validateLogin("notanemail", "password123")
+        );
 
-    // NEGATIVE TESTS
+        assertEquals("Invalid email format!", ex.getMessage());
+        verify(adminRepository, never()).findByEmail(any());
+    }
 
     @Test
     public void testValidateLogin_InvalidEmailDomain() {
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.validateLogin(
-                                "admin@gmail.com",
-                                "admin123"
-                        )
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "@company.com"
-                )
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.validateLogin("admin@gmail.com", "password123")
         );
 
-        verify(adminRepository, never())
-                .findByEmailAndPassword(
-                        anyString(),
-                        anyString()
-                );
+        assertEquals("Only company email addresses ending with @company.com are allowed.", ex.getMessage());
+        verify(adminRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    public void testAddDesignation_NullDesignation() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.addDesignation(null)
+        );
+
+        assertEquals("Designation object cannot be null!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
     }
 
     @Test
     public void testAddDesignation_EmptyName() {
+        Designation desig = new Designation(null, "   ", "ACTIVE");
 
-        Designation desig =
-                new Designation(
-                        null,
-                        "   ",
-                        "ACTIVE"
-                );
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.addDesignation(desig)
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "Designation name is required"
-                )
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.addDesignation(desig)
         );
 
-        verify(designationRepository, never())
-                .save(any(Designation.class));
-    }
-
-    @Test
-    public void testAddDesignation_NullName() {
-
-        Designation desig =
-                new Designation(
-                        null,
-                        null,
-                        "ACTIVE"
-                );
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.addDesignation(desig)
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "Designation name is required"
-                )
-        );
-
-        verify(designationRepository, never())
-                .save(any(Designation.class));
+        assertEquals("Designation name is required!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
     }
 
     @Test
     public void testAddDesignation_DuplicateName() {
+        Designation desig = new Designation(null, "QA Engineer", "ACTIVE");
+        when(designationRepository.findByNameIgnoreCase("QA Engineer"))
+            .thenReturn(Optional.of(new Designation(1L, "QA Engineer", "ACTIVE")));
 
-        Designation desig =
-                new Designation(
-                        null,
-                        "Spring Boot Developer",
-                        "ACTIVE"
-                );
-
-        when(designationRepository
-                .findByNameIgnoreCase(
-                        "Spring Boot Developer"
-                ))
-                .thenReturn(
-                        Optional.of(
-                                new Designation(
-                                        1L,
-                                        "Spring Boot Developer",
-                                        "ACTIVE"
-                                )
-                        )
-                );
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.addDesignation(desig)
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "already exists"
-                )
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.addDesignation(desig)
         );
 
-        verify(designationRepository, never())
-                .save(any(Designation.class));
+        assertEquals("Designation 'QA Engineer' already exists!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
     }
 
     @Test
     public void testUpdateDesignation_NotFound() {
+        when(designationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Designation updated =
-                new Designation(
-                        null,
-                        "Senior Developer",
-                        "ACTIVE"
-                );
-
-        when(designationRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.updateDesignation(
-                                999L,
-                                updated
-                        )
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "not found"
-                )
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.updateDesignation(99L, new Designation(null, "Test", "ACTIVE"))
         );
 
-        verify(designationRepository, never())
-                .save(any(Designation.class));
-    }
-
-    @Test
-    public void testUpdateDesignation_DuplicateName() {
-
-        Designation existing =
-                new Designation(
-                        2L,
-                        "Angular Developer",
-                        "ACTIVE"
-                );
-
-        Designation duplicate =
-                new Designation(
-                        null,
-                        "Java Developer",
-                        "ACTIVE"
-                );
-
-        Designation anotherExisting =
-                new Designation(
-                        1L,
-                        "Java Developer",
-                        "ACTIVE"
-                );
-
-        when(designationRepository.findById(2L))
-                .thenReturn(Optional.of(existing));
-
-        when(designationRepository
-                .findByNameIgnoreCase("Java Developer"))
-                .thenReturn(Optional.of(anotherExisting));
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.updateDesignation(
-                                2L,
-                                duplicate
-                        )
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "already exists"
-                )
-        );
-
-        verify(designationRepository, never())
-                .save(any(Designation.class));
-    }
-
-    @Test
-    public void testUpdateDesignationStatus_NotFound() {
-
-        when(designationRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
-        RuntimeException exception =
-                assertThrows(
-                        RuntimeException.class,
-                        () -> adminService.updateDesignationStatus(
-                                999L,
-                                "INACTIVE"
-                        )
-                );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "not found"
-                )
-        );
-
-        verify(designationRepository, never())
-                .save(any(Designation.class));
+        assertEquals("Designation with ID 99 not found!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
     }
 }

@@ -2,18 +2,20 @@ package com.example.candidateservice.service;
 
 import com.example.candidateservice.client.JobServiceClient;
 import com.example.candidateservice.dto.JobPostingDto;
-import com.example.candidateservice.entity.Candidate;
-import com.example.candidateservice.repository.CandidateRepository;
-import com.example.candidateservice.repository.InterviewRepository;
-import com.example.candidateservice.repository.NotificationRepository;
-import com.example.candidateservice.service.CandidateService;
+import com.example.candidateservice.entity.*;
+import com.example.candidateservice.repository.*;
+import com.example.candidateservice.security.JwtUtil;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +25,10 @@ import static org.mockito.Mockito.*;
 public class CandidateServiceTest {
 
     @Mock
-    private CandidateRepository candidateRepository;
+    private EmployeeProfileRepository employeeProfileRepository;
+
+    @Mock
+    private ApplicationRepository applicationRepository;
 
     @Mock
     private InterviewRepository interviewRepository;
@@ -32,490 +37,244 @@ public class CandidateServiceTest {
     private NotificationRepository notificationRepository;
 
     @Mock
+    private DocumentRepository documentRepository;
+
+    @Mock
     private JobServiceClient jobServiceClient;
+
+    @Spy
+    private JwtUtil jwtUtil = new JwtUtil();
 
     @InjectMocks
     private CandidateService candidateService;
+
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
 
-    // =========================
-    // POSITIVE TESTS
-    // =========================
+    // =========================================================
+    // POSITIVE TEST CASES
+    // =========================================================
 
     @Test
-    public void testApplyForJob_Success() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@company.com",
-                "Test@123",
-                1L
+    public void testRegisterEmployee_Success() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        JobPostingDto openJob =
-                new JobPostingDto(
-                        1L,
-                        "JOB101",
-                        "Java Developer",
-                        "OPEN"
-                );
+        when(employeeProfileRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(Optional.empty());
+        when(employeeProfileRepository.findByEmployeeId("EMP101")).thenReturn(Optional.empty());
+        when(employeeProfileRepository.save(any(EmployeeProfile.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("john.doe@company.com"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmployeeId("EMP101"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmailIgnoreCaseAndJobId(
-                        "john.doe@company.com", 1L))
-                .thenReturn(Optional.empty());
-
-        when(candidateRepository
-                .findByEmployeeIdAndJobId(
-                        "EMP101", 1L))
-                .thenReturn(Optional.empty());
-
-        when(jobServiceClient.getJobById(1L))
-                .thenReturn(openJob);
-
-        when(candidateRepository.save(any(Candidate.class)))
-                .thenReturn(candidate);
-
-        Candidate saved =
-                candidateService.applyForJob(candidate);
+        EmployeeProfile saved = candidateService.registerEmployee(profile);
 
         assertNotNull(saved);
-        assertEquals("John", saved.getFirstName());
-
-        verify(candidateRepository, times(1))
-                .save(candidate);
+        assertEquals("EMP101", saved.getEmployeeId());
+        assertEquals("john.doe@company.com", saved.getEmail());
+        verify(employeeProfileRepository, times(1)).save(any(EmployeeProfile.class));
     }
 
     @Test
     public void testLoginEmployee_Success() {
-
-        Candidate candidate = new Candidate(
-                1L,
-                "Naman",
-                "Dheer",
-                "E901",
-                "1995-01-01",
-                "naman@company.com",
-                "Test@123",
-                1L
+        EmployeeProfile profile = new EmployeeProfile(
+            1L, "EMP101", "john.doe@company.com", encoder.encode("Password123"),
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("naman@company.com"))
-                .thenReturn(List.of(candidate));
+        when(employeeProfileRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(Optional.of(profile));
 
-        Candidate loggedIn =
-                candidateService.loginEmployee(
-                        "naman@company.com",
-                        "Test@123"
-                );
+        Map<String, Object> result = candidateService.loginEmployee("john.doe@company.com", "Password123");
 
-        assertNotNull(loggedIn);
-        assertEquals(
-                "naman@company.com",
-                loggedIn.getEmail()
-        );
+        assertNotNull(result);
+        assertNotNull(result.get("token"));
+        assertEquals("EMP101", result.get("employeeId"));
     }
 
     @Test
-    public void testDeleteCandidate_Success() {
-
-        Candidate candidate = new Candidate(
-                10L,
-                "Jane",
-                "Doe",
-                "EMP202",
-                "1996-06-16",
-                "jane.doe@company.com",
-                "Test@123",
-                1L
+    public void testApplyForJob_Success() {
+        EmployeeProfile profile = new EmployeeProfile(
+            1L, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        when(candidateRepository.findById(10L))
-                .thenReturn(Optional.of(candidate));
+        JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Senior Java Developer", "PUBLISHED");
 
-        candidateService.deleteCandidate(10L);
+        when(employeeProfileRepository.findByEmployeeId("EMP101")).thenReturn(Optional.of(profile));
+        when(jobServiceClient.getJobById(1L)).thenReturn(openJob);
+        when(applicationRepository.findByEmployeeIdAndJobIdAndStatusNotIn(eq("EMP101"), eq(1L), any())).thenReturn(List.of());
+        when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
 
-        verify(notificationRepository, times(1))
-                .deleteByCandidateId(10L);
+        Application app = candidateService.applyForJob("EMP101", 1L, "Looking forward", null);
 
-        verify(interviewRepository, times(1))
-                .deleteByCandidateId(10L);
-
-        verify(candidateRepository, times(1))
-                .deleteById(10L);
-    }
-
-
-    // NEGATIVE TESTS
-
-    @Test
-    public void testApplyForJob_InvalidEmailDomain() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@gmail.com",
-                "Test@123",
-                1L
-        );
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
-        );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "Only company email addresses ending with @company.com are allowed"
-                )
-        );
+        assertNotNull(app);
+        assertEquals("EMP101", app.getEmployeeId());
+        assertEquals("SUBMITTED", app.getStatus());
+        verify(notificationRepository, times(1)).save(any(Notification.class));
     }
 
     @Test
-    public void testApplyForJob_MissingEmail() {
+    public void testWithdrawApplication_Success() {
+        Application app = new Application(10L, "EMP101", 1L, "Title", "Senior Java Developer", "Bangalore", "Engineering", "Note", null);
+        app.setStatus("SUBMITTED");
 
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                null,
-                "Test@123",
-                1L
+        when(applicationRepository.findById(10L)).thenReturn(Optional.of(app));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
+
+        Application withdrawn = candidateService.withdrawApplication(10L, "EMP101");
+
+        assertNotNull(withdrawn);
+        assertEquals("WITHDRAWN", withdrawn.getStatus());
+        verify(notificationRepository, times(1)).save(any(Notification.class));
+    }
+
+    // =========================================================
+    // NEGATIVE TEST CASES (Null, Blank, Malformed, Boundary, Side Effects)
+    // =========================================================
+
+    @Test
+    public void testRegisterEmployee_NullProfile() {
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(null)
         );
 
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
-        );
-
-        assertTrue(
-                exception.getMessage().contains("Email is required")
-        );
+        assertEquals("Employee profile object cannot be null!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
-    public void testApplyForJob_MissingEmployeeId() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                null,
-                "1995-05-15",
-                "john.doe@company.com",
-                "Test@123",
-                1L
+    public void testRegisterEmployee_MissingFirstName() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
         );
 
-        assertTrue(
-                exception.getMessage().contains(
-                        "Employee ID is required"
-                )
-        );
+        assertEquals("First Name is required!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
-    public void testApplyForJob_MissingPasswordForNewCandidate() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@company.com",
-                null,
-                1L
+    public void testRegisterEmployee_MalformedEmail() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "notanemail", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("john.doe@company.com"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmployeeId("EMP101"))
-                .thenReturn(List.of());
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
         );
 
-        assertTrue(
-                exception.getMessage().contains(
-                        "Password is required"
-                )
-        );
+        assertEquals("Invalid email format!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
-    public void testApplyForJob_DuplicateApplicationForSameJob() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@company.com",
-                "Test@123",
-                1L
+    public void testRegisterEmployee_InvalidEmailDomain() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@gmail.com", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("john.doe@company.com"))
-                .thenReturn(List.of(candidate));
-
-        when(candidateRepository
-                .findByEmployeeId("EMP101"))
-                .thenReturn(List.of(candidate));
-
-        when(candidateRepository
-                .findByEmailIgnoreCaseAndJobId(
-                        "john.doe@company.com", 1L))
-                .thenReturn(Optional.of(candidate));
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
         );
 
-        assertTrue(
-                exception.getMessage().contains(
-                        "already applied"
-                )
-        );
+        assertEquals("Only company email addresses ending with @company.com are allowed.", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
-    public void testApplyForJob_JobDoesNotExist() {
-
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@company.com",
-                "Test@123",
-                999L
+    public void testRegisterEmployee_NegativeExperience() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", -2.5
         );
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("john.doe@company.com"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmployeeId("EMP101"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmailIgnoreCaseAndJobId(
-                        "john.doe@company.com", 999L))
-                .thenReturn(Optional.empty());
-
-        when(candidateRepository
-                .findByEmployeeIdAndJobId(
-                        "EMP101", 999L))
-                .thenReturn(Optional.empty());
-
-        when(jobServiceClient.getJobById(999L))
-                .thenReturn(null);
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
         );
 
-        assertTrue(
-                exception.getMessage().contains(
-                        "does not exist"
-                )
+        assertEquals("Experience years cannot be negative!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_InvalidDobFormat() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "not-a-date", "Java Developer", "Engineering", "Java", 3.0
         );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Invalid Date of Birth format! Must be YYYY-MM-DD.", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
     public void testApplyForJob_ClosedJob() {
+        EmployeeProfile profile = new EmployeeProfile(1L, "EMP101", "john@company.com", "P", "J", "D", "1995-05-15", "D", "E", "S", 3.0);
+        JobPostingDto closedJob = new JobPostingDto(1L, "JOB101", "Java Developer", "CLOSED");
 
-        Candidate candidate = new Candidate(
-                null,
-                "John",
-                "Doe",
-                "EMP101",
-                "1995-05-15",
-                "john.doe@company.com",
-                "Test@123",
-                2L
+        when(employeeProfileRepository.findByEmployeeId("EMP101")).thenReturn(Optional.of(profile));
+        when(jobServiceClient.getJobById(1L)).thenReturn(closedJob);
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.applyForJob("EMP101", 1L, "Note", null)
         );
 
-        JobPostingDto closedJob =
-                new JobPostingDto(
-                        2L,
-                        "JOB102",
-                        "Java Developer",
-                        "CLOSED"
-                );
-
-        when(candidateRepository
-                .findByEmailIgnoreCase("john.doe@company.com"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmployeeId("EMP101"))
-                .thenReturn(List.of());
-
-        when(candidateRepository
-                .findByEmailIgnoreCaseAndJobId(
-                        "john.doe@company.com", 2L))
-                .thenReturn(Optional.empty());
-
-        when(candidateRepository
-                .findByEmployeeIdAndJobId(
-                        "EMP101", 2L))
-                .thenReturn(Optional.empty());
-
-        when(jobServiceClient.getJobById(2L))
-                .thenReturn(closedJob);
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.applyForJob(candidate)
-        );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "CLOSED"
-                )
-        );
+        assertTrue(ex.getMessage().contains("Cannot apply: Job posting"));
+        verify(applicationRepository, never()).save(any());
     }
 
     @Test
-    public void testLoginEmployee_WrongPassword() {
+    public void testUpdateStage_WithdrawnApplication() {
+        Application withdrawnApp = new Application(10L, "EMP101", 1L, "Title", "Designation", "Loc", "Dept", "Note", null);
+        withdrawnApp.setStatus("WITHDRAWN");
 
-        Candidate candidate = new Candidate(
-                1L,
-                "Naman",
-                "Dheer",
-                "E901",
-                "1995-01-01",
-                "naman@company.com",
-                "Test@123",
-                1L
+        when(applicationRepository.findById(10L)).thenReturn(Optional.of(withdrawnApp));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.updateApplicationStageByHR(10L, "SHORTLISTED", "Notes")
         );
 
-        when(candidateRepository
-                .findByEmailIgnoreCase("naman@company.com"))
-                .thenReturn(List.of(candidate));
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.loginEmployee(
-                        "naman@company.com",
-                        "Wrong123"
-                )
-        );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "Invalid email"
-                )
-        );
+        assertEquals("Cannot update stage: Candidate has WITHDRAWN this application.", ex.getMessage());
+        verify(applicationRepository, never()).save(any());
     }
 
     @Test
-    public void testLoginEmployee_InvalidDomain() {
+    public void testScheduleInterview_WithdrawnApplication() {
+        Application withdrawnApp = new Application(10L, "EMP101", 1L, "Title", "Designation", "Loc", "Dept", "Note", null);
+        withdrawnApp.setStatus("WITHDRAWN");
 
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.loginEmployee(
-                        "naman@gmail.com",
-                        "Test@123"
-                )
+        Interview interview = new Interview();
+        interview.setApplicationId(10L);
+
+        when(applicationRepository.findById(10L)).thenReturn(Optional.of(withdrawnApp));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.scheduleInterview(interview)
         );
 
-        assertTrue(
-                exception.getMessage().contains(
-                        "Only company email addresses ending with @company.com are allowed"
-                )
-        );
-    }
-
-    @Test
-    public void testLoginEmployee_EmailNotFound() {
-
-        when(candidateRepository
-                .findByEmailIgnoreCase("unknown@company.com"))
-                .thenReturn(List.of());
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.loginEmployee(
-                        "unknown@company.com",
-                        "Test@123"
-                )
-        );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "Invalid email"
-                )
-        );
-    }
-
-    @Test
-    public void testDeleteCandidate_NotFound() {
-
-        when(candidateRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
-                () -> candidateService.deleteCandidate(999L)
-        );
-
-        assertTrue(
-                exception.getMessage().contains(
-                        "not found"
-                )
-        );
-
-        verify(candidateRepository, times(1))
-                .findById(999L);
-
-        verify(candidateRepository, never())
-                .deleteById(999L);
-
-        verify(notificationRepository, never())
-                .deleteByCandidateId(999L);
-
-        verify(interviewRepository, never())
-                .deleteByCandidateId(999L);
+        assertEquals("Cannot schedule interview: Candidate has WITHDRAWN this application.", ex.getMessage());
+        verify(interviewRepository, never()).save(any());
     }
 }

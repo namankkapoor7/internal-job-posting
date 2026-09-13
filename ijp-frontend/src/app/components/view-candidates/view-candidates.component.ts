@@ -2,11 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CandidateService } from '../../services/candidate.service';
-import { JobService } from '../../services/job.service';
-import { Candidate } from '../../models/candidate.model';
-import { JobPosting } from '../../models/job.model';
-import { Interview } from '../../models/interview.model';
+import { CandidateService, Application, Interview } from '../../services/candidate.service';
+import { JobService, JobPosting } from '../../services/job.service';
 
 @Component({
   selector: 'app-view-candidates',
@@ -17,17 +14,18 @@ import { Interview } from '../../models/interview.model';
 })
 export class ViewCandidatesComponent implements OnInit {
 
-  jobId!: number;
+  jobId: number | null = null;
   jobDetails?: JobPosting;
-  candidates: Candidate[] = [];
+  applications: Application[] = [];
   isLoading = true;
   errorMessage = '';
 
-  // Interview Modal State - Form fields completely empty initially
-  selectedCandidateForInterview?: Candidate;
+  filterStage = '';
+
+  // Interview Modal State
+  selectedAppForInterview: Application | null = null;
   interviewData: Interview = {
-    candidateId: 0,
-    jobId: 0,
+    applicationId: 0,
     interviewMode: 'OFFLINE',
     interviewDate: '',
     interviewTime: '',
@@ -48,75 +46,60 @@ export class ViewCandidatesComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.jobId = +params['jobId'];
-      this.loadJobDetails();
-      this.loadCandidates();
+      if (params['jobId']) {
+        this.jobId = +params['jobId'];
+        this.loadJobDetails();
+      }
+      this.loadApplications();
     });
   }
 
   loadJobDetails(): void {
+    if (!this.jobId) return;
     this.jobService.getJobById(this.jobId).subscribe({
-      next: (job) => this.jobDetails = job,
-      error: (err) => console.error('Error fetching job details', err)
+      next: (job) => this.jobDetails = job
     });
   }
 
-  loadCandidates(): void {
+  loadApplications(): void {
     this.isLoading = true;
-    this.candidateService.getCandidatesByJobId(this.jobId).subscribe({
+    this.candidateService.getHRApplications(this.jobId || undefined, this.filterStage || undefined).subscribe({
       next: (data) => {
-        this.candidates = data;
+        this.applications = data;
         this.isLoading = false;
       },
       error: (err) => {
-        this.errorMessage = 'Failed to load candidates for this job.';
+        this.errorMessage = 'Failed to load applications for review.';
         this.isLoading = false;
-        console.error(err);
       }
     });
   }
 
-  deleteCandidate(candidate: Candidate): void {
-    if (!candidate || !candidate.id) return;
-
-    const confirmMessage = `Are you sure you want to delete this employee/application?\n\nEmployee ID: ${candidate.employeeId}\nName: ${candidate.firstName} ${candidate.lastName}\nEmail: ${candidate.email}`;
-    
-    if (confirm(confirmMessage)) {
-      this.candidateService.deleteCandidate(candidate.id).subscribe({
-        next: (res) => {
-          alert(res?.message || 'Employee deleted successfully.');
-          this.candidates = this.candidates.filter(c => c.id !== candidate.id);
-        },
-        error: (err) => {
-          const errorMsg = err.error?.message || 'Unable to delete employee. Please try again.';
-          alert(errorMsg);
-          console.error('Delete candidate error:', err);
-        }
-      });
-    }
-  }
-
-  updateStatus(candidateId: number, status: string): void {
-    this.candidateService.updateCandidateStatus(candidateId, status).subscribe({
+  updateStage(app: Application, stage: string): void {
+    this.candidateService.updateApplicationStage(app.id, stage, app.reviewerNotes).subscribe({
       next: (updated) => {
-        this.loadCandidates();
+        app.status = updated.status;
+        this.loadApplications();
       },
       error: (err) => {
-        alert('Failed to update candidate status.');
-        console.error(err);
+        alert(err.error?.message || 'Failed to update application stage.');
       }
     });
   }
 
-  openInterviewModal(candidate: Candidate): void {
-    this.selectedCandidateForInterview = candidate;
+  saveReviewerNotes(app: Application): void {
+    this.candidateService.updateApplicationStage(app.id, app.status, app.reviewerNotes).subscribe({
+      next: () => alert('Reviewer notes saved.'),
+      error: (err) => alert('Failed to save notes.')
+    });
+  }
+
+  openInterviewModal(app: Application): void {
+    this.selectedAppForInterview = app;
     this.interviewSuccessMsg = '';
     this.interviewErrorMsg = '';
-
-    // Reset form fields to completely empty
     this.interviewData = {
-      candidateId: candidate.id!,
-      jobId: this.jobId,
+      applicationId: app.id,
       interviewMode: 'OFFLINE',
       interviewDate: '',
       interviewTime: '',
@@ -124,6 +107,10 @@ export class ViewCandidatesComponent implements OnInit {
       meetingLink: '',
       interviewer: ''
     };
+  }
+
+  closeInterviewModal(): void {
+    this.selectedAppForInterview = null;
   }
 
   submitScheduleInterview(): void {
@@ -150,20 +137,29 @@ export class ViewCandidatesComponent implements OnInit {
     this.interviewSuccessMsg = '';
     this.interviewErrorMsg = '';
 
-    this.candidateService.scheduleInterview(this.interviewData).subscribe({
-      next: (saved) => {
+    this.candidateService.scheduleInterview(this.interviewData.applicationId, this.interviewData).subscribe({
+      next: () => {
         this.isScheduling = false;
-        this.interviewSuccessMsg = 'Interview scheduled successfully and candidate notified.';
-        this.loadCandidates();
+        this.interviewSuccessMsg = 'Interview scheduled and candidate notified successfully.';
+        setTimeout(() => {
+          this.closeInterviewModal();
+          this.loadApplications();
+        }, 1200);
       },
       error: (err) => {
         this.isScheduling = false;
-        if (err.error && err.error.message) {
-          this.interviewErrorMsg = err.error.message;
-        } else {
-          this.interviewErrorMsg = 'Failed to schedule interview.';
-        }
+        this.interviewErrorMsg = err.error?.message || 'Failed to schedule interview.';
       }
     });
+  }
+
+  getStatusClass(status: string): string {
+    const s = status ? status.toLowerCase() : 'submitted';
+    return `badge-${s}`;
+  }
+
+  getDownloadUrl(docId?: number): string {
+    if (!docId) return '#';
+    return this.candidateService.getDownloadUrl(docId);
   }
 }

@@ -1,172 +1,100 @@
-<div class="bg-primary text-white py-3 mb-4 shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div>
-            <h3 class="fw-bold mb-1">
-                <i class="fa-solid fa-user-graduate me-2"></i>Employee Dashboard
-            </h3>
-            <p class="small text-white-50 mb-0" *ngIf="currentUser">
-                Welcome, <strong>{{ currentUser.name }}</strong> (Emp ID: {{ currentUser.employeeId }})
-            </p>
-        </div>
+<div class="container">
+  <div style="margin-bottom: 24px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">Employee Dashboard</h2>
+    <p style="color: var(--text-secondary); font-size: 13px;">Welcome back, {{ currentUser?.name }} (ID: {{ currentUser?.employeeId }})</p>
+  </div>
 
-        <div class="d-flex gap-2">
-            <a routerLink="/notifications" class="btn btn-light text-primary btn-sm fw-semibold position-relative">
-                <i class="fa-solid fa-bell me-1"></i> Notifications
-                <span
-                        *ngIf="unreadNotifCount > 0"
-                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-          {{ unreadNotifCount }}
-        </span>
-            </a>
-
-            <a routerLink="/" class="btn btn-outline-light btn-sm fw-semibold">
-                <i class="fa-solid fa-briefcase me-1"></i> Available Jobs
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="container mb-5">
-
-    <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted small">Loading dashboard...</p>
+  <!-- Metric Summary Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="margin-bottom: 0;">
+      <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Active Applications</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--primary-color); margin-top: 4px;">
+        {{ activeApplicationsCount }}
+      </div>
     </div>
 
-    <div *ngIf="errorMessage" class="alert alert-danger mb-4 py-2 small">
-        {{ errorMessage }}
+    <div class="card" style="margin-bottom: 0;">
+      <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Unread Notifications</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--warning-text); margin-top: 4px;">
+        {{ unreadCount }}
+      </div>
     </div>
 
-    <div *ngIf="!isLoading && currentUser" class="row g-4">
+    <div class="card" style="margin-bottom: 0;">
+      <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Open Positions</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--success-text); margin-top: 4px;">
+        {{ openJobs.length }}+
+      </div>
+    </div>
+  </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm border rounded-3 h-100">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h5 class="fw-bold text-primary mb-0">
-                        <i class="fa-solid fa-id-card me-2"></i>My Profile
-                    </h5>
-                </div>
-
-                <div class="card-body p-4">
-                    <div class="text-center mb-3">
-                        <div
-                                class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center border"
-                                style="width: 70px; height: 70px; font-size: 28px;">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-
-                        <h5 class="fw-bold mt-2 mb-0">
-                            {{ currentUser.name }}
-                        </h5>
-
-                        <p class="text-muted small mb-0">
-                            {{ currentUser.email }}
-                        </p>
-                    </div>
-
-                    <div class="border rounded p-3 bg-light">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted small">Employee ID:</span>
-                            <span class="fw-bold small">
-                {{ currentUser.employeeId }}
-              </span>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted small">Role:</span>
-                            <span class="badge bg-primary">EMPLOYEE</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <!-- Active Applications Tracker -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">My Recent Applications</span>
+          <a routerLink="/my-applications" class="btn btn-secondary btn-sm">View All</a>
         </div>
 
-        <div class="col-lg-8">
-            <div class="card shadow-sm border rounded-3 mb-4">
-
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0 text-primary">
-                        <i class="fa-solid fa-file-signature me-2"></i>My Job Applications
-                    </h5>
-                </div>
-
-                <div class="card-body p-0">
-
-                    <div
-                            *ngIf="myApplications.length === 0"
-                            class="text-center py-4 p-3">
-
-                        <i class="fa-solid fa-folder-open display-6 text-muted mb-2"></i>
-
-                        <h6 class="fw-bold text-dark mb-1">
-                            No Active Applications
-                        </h6>
-
-                        <p class="text-muted small mb-3">
-                            Browse open internal job postings and apply today.
-                        </p>
-
-                        <a routerLink="/" class="btn btn-primary btn-sm">
-                            Browse Jobs
-                        </a>
-                    </div>
-
-                    <div
-                            *ngIf="myApplications.length > 0"
-                            class="table-responsive">
-
-                        <table class="table table-hover align-middle mb-0">
-
-                            <thead class="table-light">
-                            <tr>
-                                <th class="ps-4">Application ID</th>
-                                <th>Job ID</th>
-                                <th>Applied Email</th>
-                                <th>Status</th>
-                            </tr>
-                            </thead>
-
-                            <tbody>
-                            <tr *ngFor="let app of myApplications">
-
-                                <td class="ps-4 fw-bold">
-                                    #{{ app.id }}
-                                </td>
-
-                                <td>
-                    <span class="badge bg-secondary">
-                      Job #{{ app.jobId }}
-                    </span>
-                                </td>
-
-                                <td class="small">
-                                    {{ app.email }}
-                                </td>
-
-                                <td>
-                    <span
-                            class="badge px-3 py-1.5 fw-bold"
-                            [ngClass]="{
-                        'bg-info text-dark': app.status === 'APPLIED' || !app.status,
-                        'bg-warning text-dark': app.status === 'SHORTLISTED',
-                        'bg-primary': app.status === 'INTERVIEW_SCHEDULED',
-                        'bg-success': app.status === 'SELECTED',
-                        'bg-danger': app.status === 'REJECTED'
-                      }">
-                      {{ app.status || 'APPLIED' }}
-                    </span>
-                                </td>
-
-                            </tr>
-                            </tbody>
-
-                        </table>
-                    </div>
-
-                </div>
-            </div>
+        <div *ngIf="isLoading" style="text-align: center; padding: 20px; color: var(--text-muted);">
+          Loading application status...
         </div>
 
+        <div *ngIf="!isLoading && myApplications.length === 0" style="text-align: center; padding: 24px; color: var(--text-secondary);">
+          You have not submitted any job applications yet.
+          <div style="margin-top: 12px;">
+            <a routerLink="/jobs" class="btn btn-primary btn-sm">Browse Open Roles</a>
+          </div>
+        </div>
+
+        <div *ngIf="!isLoading && myApplications.length > 0" class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Job Role</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let app of myApplications.slice(0, 5)">
+                <td>
+                  <strong>{{ app.jobSnapshotDesignation }}</strong>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ app.jobSnapshotTitle }}</div>
+                </td>
+                <td>{{ app.jobSnapshotLocation }}</td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusClass(app.status)">{{ app.status }}</span>
+                </td>
+                <td style="font-size: 12px; color: var(--text-secondary);">
+                  {{ app.submittedAt | date:'shortDate' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
+    <!-- Quick Sidebar: Open Roles & Quick Links -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Featured Roles</span>
+          <a routerLink="/jobs" class="btn btn-secondary btn-sm">Catalog</a>
+        </div>
+
+        <div *ngFor="let job of openJobs" style="padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+          <div style="font-weight: 600; font-size: 13px;">{{ job.designation }}</div>
+          <div style="font-size: 11px; color: var(--text-secondary);">{{ job.location }} · {{ job.experience }}</div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <a routerLink="/jobs" class="btn btn-primary btn-sm" style="width: 100%;">Explore All Open Positions</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

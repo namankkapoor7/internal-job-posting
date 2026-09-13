@@ -1,79 +1,90 @@
-<div class="container my-5" style="max-width: 700px;">
-  <div class="card shadow-sm border rounded-3">
-    <div class="card-header bg-primary text-white py-3 border-bottom">
-      <h4 class="mb-1 fw-bold"><i class="fa-solid fa-user-plus me-2"></i>Candidate Application Form</h4>
-      <p class="mb-0 small opacity-75">Apply for open internal job posting</p>
+<div class="container">
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">My Job Applications</h2>
+      <p style="color: var(--text-secondary); font-size: 13px;">Track your submitted applications and progress across interview stages.</p>
     </div>
-    <div class="card-body p-4">
+    <a routerLink="/jobs" class="btn btn-primary btn-sm">Apply for New Role</a>
+  </div>
 
-      <!-- Success Alert -->
-      <div *ngIf="successMessage" class="alert alert-success shadow-sm mb-4 py-2 small" role="alert">
-        <i class="fa-solid fa-circle-check me-2"></i> {{ successMessage }}
-      </div>
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="badge badge-selected" style="width: 100%; padding: 10px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="badge badge-rejected" style="width: 100%; padding: 10px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
+    {{ errorMessage }}
+  </div>
 
-      <!-- Error Alert -->
-      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small" role="alert">
-        <i class="fa-solid fa-circle-exclamation me-2"></i> {{ errorMessage }}
-      </div>
+  <div *ngIf="isLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+    Loading your application history...
+  </div>
 
-      <!-- Selected Job Info Banner -->
-      <div *ngIf="selectedJobCode || selectedJobTitle" class="alert alert-primary border shadow-sm mb-4 py-2">
-        <h6 class="fw-bold mb-1"><i class="fa-solid fa-briefcase me-2"></i>Applying For Position:</h6>
-        <span class="badge bg-primary me-2">{{ selectedJobCode }}</span>
-        <span class="fw-semibold text-dark">{{ selectedJobTitle }}</span>
-      </div>
+  <div *ngIf="!isLoading && applications.length === 0" class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+    You have not submitted any job applications yet.
+    <div style="margin-top: 16px;">
+      <a routerLink="/jobs" class="btn btn-primary btn-sm">Browse Open Jobs</a>
+    </div>
+  </div>
 
-      <form (ngSubmit)="onSubmit()" #applyForm="ngForm" autocomplete="off">
-        <div class="mb-3">
-          <label for="jobId" class="form-label fw-semibold small">Job ID</label>
-          <input type="number" class="form-control" id="jobId" name="jobId" [(ngModel)]="candidate.jobId" required placeholder="Enter Job ID" />
-        </div>
-
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="firstName" class="form-label fw-semibold small">First Name</label>
-            <input type="text" class="form-control" id="firstName" name="firstName" [(ngModel)]="candidate.firstName" required placeholder="Enter First Name" autocomplete="off" />
-          </div>
-          <div class="col-md-6 mb-3">
-            <label for="lastName" class="form-label fw-semibold small">Last Name</label>
-            <input type="text" class="form-control" id="lastName" name="lastName" [(ngModel)]="candidate.lastName" required placeholder="Enter Last Name" autocomplete="off" />
+  <div *ngIf="!isLoading && applications.length > 0">
+    <div *ngFor="let app of applications" class="card">
+      <div class="card-header">
+        <div>
+          <div style="font-size: 11px; font-weight: 600; color: var(--primary-color);">Application #{{ app.id }}</div>
+          <h3 class="card-title">{{ app.jobSnapshotDesignation }}</h3>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+            {{ app.jobSnapshotTitle }} · {{ app.jobSnapshotLocation }} <span *ngIf="app.jobSnapshotDepartment">· {{ app.jobSnapshotDepartment }}</span>
           </div>
         </div>
 
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="employeeId" class="form-label fw-semibold small">Employee ID</label>
-            <input type="text" class="form-control" id="employeeId" name="employeeId" [(ngModel)]="candidate.employeeId" required placeholder="Enter Employee ID" autocomplete="off" />
-          </div>
-          <div class="col-md-6 mb-3">
-            <label for="dob" class="form-label fw-semibold small">Date of Birth</label>
-            <input type="date" class="form-control" id="dob" name="dob" [(ngModel)]="candidate.dob" required />
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label for="email" class="form-label fw-semibold small">Company Email <span class="text-danger">*</span></label>
-          <input type="email" class="form-control" id="email" name="email" [(ngModel)]="candidate.email" #emailModel="ngModel" pattern="^[^@\s]+@company\.com$" required placeholder="naman@company.com" autocomplete="off" />
-          <div class="form-text extra-small text-muted">Please use your company email ending with &#64;company.com.</div>
-          <div *ngIf="emailModel.invalid && (emailModel.dirty || emailModel.touched)" class="text-danger extra-small mt-1">
-            Please use your company email ending with &#64;company.com.
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label for="password" class="form-label fw-semibold small">Account Password <span class="text-danger">*</span></label>
-          <input type="password" class="form-control" id="password" name="password" [(ngModel)]="candidate.password" placeholder="Enter employee account password" autocomplete="new-password" />
-          <div class="form-text extra-small text-muted">Password used for employee login authentication.</div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center">
-          <a routerLink="/" class="btn btn-outline-secondary px-4"><i class="fa-solid fa-arrow-left me-1"></i> Back to Jobs</a>
-          <button type="submit" [disabled]="!applyForm.form.valid || isSubmitting" class="btn btn-primary px-5 fw-semibold py-2">
-            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
-            Submit Application
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="badge" [ngClass]="getStatusClass(app.status)">{{ app.status }}</span>
+          <button *ngIf="canWithdraw(app)" (click)="onWithdraw(app)" class="btn btn-secondary btn-sm" [disabled]="isWithdrawing">
+            Withdraw
           </button>
         </div>
-      </form>
+      </div>
+
+      <!-- Application Details & Notes -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div *ngIf="app.coverNote" style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); font-size: 13px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Cover Note</div>
+          {{ app.coverNote }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">
+          <div><strong>Submitted On:</strong> {{ app.submittedAt | date:'medium' }}</div>
+          <div *ngIf="app.documentId" style="margin-top: 4px;">
+            <a [href]="getDownloadUrl(app.documentId)" target="_blank" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px;">📄 Download Attached Resume</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Timeline Tracker -->
+      <div style="padding-top: 12px; border-top: 1px dashed var(--border-color);" *ngIf="app.status !== 'WITHDRAWN'">
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Application Progress</div>
+        <div style="display: flex; justify-content: space-between; position: relative;">
+          <div style="text-align: center; flex: 1;">
+            <div [style.background]="getStageStep(app.status) >= 1 ? 'var(--primary-color)' : 'var(--border-strong)'" style="width: 24px; height: 24px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Submitted</div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div [style.background]="getStageStep(app.status) >= 2 ? 'var(--primary-color)' : 'var(--border-strong)'" style="width: 24px; height: 24px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Under Review</div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div [style.background]="getStageStep(app.status) >= 3 ? 'var(--primary-color)' : 'var(--border-strong)'" style="width: 24px; height: 24px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Shortlisted</div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div [style.background]="getStageStep(app.status) >= 4 ? 'var(--primary-color)' : 'var(--border-strong)'" style="width: 24px; height: 24px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">4</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Interview</div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div [style.background]="app.status === 'SELECTED' ? 'var(--success-text)' : (app.status === 'REJECTED' ? 'var(--danger-text)' : 'var(--border-strong)')" style="width: 24px; height: 24px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">5</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Decision</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

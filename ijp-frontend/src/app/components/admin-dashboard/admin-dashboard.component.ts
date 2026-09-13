@@ -2,16 +2,27 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { JobService } from '../../services/job.service';
+import { JobService, JobPosting } from '../../services/job.service';
 import { AdminService } from '../../services/admin.service';
 import { AuthService } from '../../services/auth.service';
-import { JobPosting } from '../../models/job.model';
 import { Designation } from '../../models/designation.model';
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'filterByStatus',
+  standalone: true
+})
+export class FilterByStatusPipe implements PipeTransform {
+  transform(items: any[], status: string): any[] {
+    if (!items) return [];
+    return items.filter(item => item.status === status);
+  }
+}
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FilterByStatusPipe],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
@@ -56,10 +67,9 @@ export class AdminDashboardComponent implements OnInit {
         this.jobs = data;
         this.isLoadingJobs = false;
       },
-      error: (err) => {
+      error: () => {
         this.errorMessage = 'Failed to load jobs.';
         this.isLoadingJobs = false;
-        console.error(err);
       }
     });
   }
@@ -70,37 +80,28 @@ export class AdminDashboardComponent implements OnInit {
       next: (data) => {
         this.designations = data;
         this.isLoadingDesignations = false;
-      },
-      error: (err) => {
-        this.isLoadingDesignations = false;
-        console.error(err);
       }
     });
   }
 
-  closeJob(id: number): void {
-    if (confirm('Are you sure you want to close this job posting? Candidates will no longer be able to apply.')) {
-      this.jobService.closeJob(id).subscribe({
-        next: () => this.loadAllJobs(),
-        error: (err) => alert('Failed to close job.')
-      });
-    }
+  updateJobStatus(job: JobPosting, newStatus: string): void {
+    if (!job.id) return;
+    this.jobService.updateJobStatus(job.id, newStatus).subscribe({
+      next: (updated) => {
+        job.status = updated.status;
+      },
+      error: () => alert('Failed to update job status.')
+    });
   }
 
   deleteJob(job: JobPosting): void {
     if (!job || !job.id) return;
-
-    if (confirm(`Are you sure you want to delete this job posting?\n\nJob ID: ${job.jobId}\nDesignation: ${job.designation}`)) {
+    if (confirm(`Are you sure you want to delete job posting ${job.jobId}?`)) {
       this.jobService.deleteJob(job.id).subscribe({
-        next: (res) => {
-          alert(res?.message || 'Job posting deleted successfully.');
+        next: () => {
           this.jobs = this.jobs.filter(j => j.id !== job.id);
         },
-        error: (err) => {
-          const errorMsg = err.error?.message || 'Unable to delete job posting. Please try again.';
-          alert(errorMsg);
-          console.error('Delete job error:', err);
-        }
+        error: () => alert('Failed to delete job posting.')
       });
     }
   }
@@ -126,11 +127,7 @@ export class AdminDashboardComponent implements OnInit {
         this.loadAllDesignations();
       },
       error: (err) => {
-        if (err.error && err.error.message) {
-          this.designationErrorMsg = err.error.message;
-        } else {
-          this.designationErrorMsg = 'Failed to add designation.';
-        }
+        this.designationErrorMsg = err.error?.message || 'Failed to add designation.';
       }
     });
   }
@@ -138,8 +135,6 @@ export class AdminDashboardComponent implements OnInit {
   startEditDesignation(desig: Designation): void {
     this.editingDesignationId = desig.id || null;
     this.editingDesignationName = desig.name;
-    this.designationSuccessMsg = '';
-    this.designationErrorMsg = '';
   }
 
   cancelEditDesignation(): void {
@@ -161,7 +156,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.adminService.updateDesignation(desig.id!, updated).subscribe({
       next: (res) => {
-        this.designationSuccessMsg = `Designation updated to '${res.name}' successfully!`;
+        this.designationSuccessMsg = `Designation updated to '${res.name}'!`;
         this.editingDesignationId = null;
         this.loadAllDesignations();
       },
@@ -175,11 +170,12 @@ export class AdminDashboardComponent implements OnInit {
     const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     this.adminService.updateDesignationStatus(id, nextStatus).subscribe({
       next: () => this.loadAllDesignations(),
-      error: (err) => alert('Failed to update designation status.')
+      error: () => alert('Failed to update designation status.')
     });
   }
 
-  logout(): void {
-    this.authService.logout();
+  getStatusClass(status?: string): string {
+    const s = status ? status.toLowerCase() : 'draft';
+    return `badge-${s}`;
   }
 }

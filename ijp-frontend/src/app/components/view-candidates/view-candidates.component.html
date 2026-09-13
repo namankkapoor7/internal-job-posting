@@ -1,182 +1,179 @@
-<div class="bg-primary text-white py-3 mb-4 shadow-sm">
-  <div class="container d-flex justify-content-between align-items-center">
+<div class="container">
+  <!-- Page Header -->
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
     <div>
-      <h3 class="fw-bold mb-1"><i class="fa-solid fa-users me-2"></i>Job Applicants</h3>
-      <p class="small text-white-50 mb-0" *ngIf="jobDetails">
-        Candidates applied for <strong>{{ jobDetails.designation }}</strong> (Job ID: {{ jobDetails.jobId }})
-      </p>
+      <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">
+        HR Applications Review <span *ngIf="jobDetails">for {{ jobDetails.designation }}</span>
+      </h2>
+      <p style="color: var(--text-secondary); font-size: 13px;">Review candidate applications, manage stage transitions, and schedule interviews.</p>
     </div>
-    <a routerLink="/admin-dashboard" class="btn btn-outline-light btn-sm">
-      <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
-    </a>
+    <a routerLink="/admin-dashboard" class="btn btn-secondary btn-sm">HR Dashboard</a>
   </div>
-</div>
 
-<div class="container mb-5">
-  <div class="card shadow-sm border rounded-3">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-      <h5 class="fw-bold mb-0 text-primary">
-        <i class="fa-solid fa-user-check me-2"></i>Applied Candidates ({{ candidates.length }})
-      </h5>
-      <button class="btn btn-sm btn-outline-primary" (click)="loadCandidates()">
-        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
-      </button>
-    </div>
-    <div class="card-body p-0">
-
-      <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted small">Loading applicants...</p>
-      </div>
-
-      <div *ngIf="errorMessage" class="p-4">
-        <div class="alert alert-danger mb-0 py-2 small">{{ errorMessage }}</div>
-      </div>
-
-      <div *ngIf="!isLoading && !errorMessage && candidates.length === 0" class="text-center py-5">
-        <i class="fa-solid fa-user-slash display-6 text-muted mb-2"></i>
-        <h6 class="fw-bold text-dark">No Applicants Yet</h6>
-        <p class="text-muted small">No candidates have applied for this job posting yet.</p>
-      </div>
-
-      <div *ngIf="!isLoading && candidates.length > 0" class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4">ID</th>
-              <th>Employee ID</th>
-              <th>Full Name</th>
-              <th>Email</th>
-              <th>Date of Birth</th>
-              <th>Application Status</th>
-              <th class="text-end pe-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let candidate of candidates">
-              <td class="ps-4 fw-semibold text-secondary">#{{ candidate.id }}</td>
-              <td><span class="badge bg-secondary px-2 py-1">{{ candidate.employeeId }}</span></td>
-              <td class="fw-bold text-dark">{{ candidate.firstName }} {{ candidate.lastName }}</td>
-              <td class="small">{{ candidate.email }}</td>
-              <td class="small">{{ candidate.dob }}</td>
-              <td>
-                <span class="badge px-3 py-1.5 fw-semibold" [ngClass]="{
-                  'bg-info text-dark': candidate.status === 'APPLIED' || !candidate.status,
-                  'bg-warning text-dark': candidate.status === 'SHORTLISTED',
-                  'bg-primary': candidate.status === 'INTERVIEW_SCHEDULED',
-                  'bg-success': candidate.status === 'SELECTED',
-                  'bg-danger': candidate.status === 'REJECTED'
-                }">
-                  {{ candidate.status || 'APPLIED' }}
-                </span>
-              </td>
-              <td class="text-end pe-4">
-                <div class="btn-group btn-group-sm">
-                  <!-- Shortlist -->
-                  <button *ngIf="candidate.status === 'APPLIED' || !candidate.status" class="btn btn-outline-warning" (click)="updateStatus(candidate.id!, 'SHORTLISTED')" title="Shortlist Candidate">
-                    Shortlist
-                  </button>
-                  <!-- Schedule Interview -->
-                  <button *ngIf="candidate.status === 'SHORTLISTED' || candidate.status === 'INTERVIEW_SCHEDULED'" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scheduleInterviewModal" (click)="openInterviewModal(candidate)" title="Schedule Interview">
-                    Schedule Interview
-                  </button>
-                  <!-- Select -->
-                  <button *ngIf="candidate.status !== 'SELECTED' && candidate.status !== 'REJECTED'" class="btn btn-outline-success" (click)="updateStatus(candidate.id!, 'SELECTED')" title="Select Candidate">
-                    Select
-                  </button>
-                  <!-- Reject -->
-                  <button *ngIf="candidate.status !== 'SELECTED' && candidate.status !== 'REJECTED'" class="btn btn-outline-danger" (click)="updateStatus(candidate.id!, 'REJECTED')" title="Reject Candidate">
-                    Reject
-                  </button>
-                  <!-- Delete Candidate Application -->
-                  <button class="btn btn-outline-danger" (click)="deleteCandidate(candidate)" title="Delete Employee Application">
-                    <i class="fa-solid fa-trash me-1"></i>Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+  <!-- Filter Card -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary);">Filter by Stage:</label>
+      <select class="form-control" style="max-width: 250px;" [(ngModel)]="filterStage" (change)="loadApplications()">
+        <option value="">-- All Stages --</option>
+        <option value="SUBMITTED">Submitted</option>
+        <option value="UNDER_REVIEW">Under Review</option>
+        <option value="SHORTLISTED">Shortlisted</option>
+        <option value="INTERVIEW_SCHEDULED">Interview Scheduled</option>
+        <option value="SELECTED">Selected</option>
+        <option value="REJECTED">Rejected</option>
+        <option value="WITHDRAWN">Withdrawn</option>
+      </select>
     </div>
   </div>
-</div>
 
-<!-- Schedule Interview Modal -->
-<div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-3 border shadow-sm">
-      <div class="modal-header bg-primary text-white py-3">
-        <h5 class="modal-title mb-0 fw-bold" id="scheduleInterviewModalLabel">
-          <i class="fa-solid fa-calendar-plus me-2"></i>Schedule Interview
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- Applications Table -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Applicant Submissions ({{ applications.length }})</span>
+      <button (click)="loadApplications()" class="btn btn-secondary btn-sm">Refresh List</button>
+    </div>
+
+    <div *ngIf="isLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+      Loading applicant records...
+    </div>
+
+    <div *ngIf="!isLoading && applications.length === 0" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+      No applications found for the selected criteria.
+    </div>
+
+    <div *ngIf="!isLoading && applications.length > 0" class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Applicant Details</th>
+            <th>Target Position</th>
+            <th>Current Stage</th>
+            <th>Stage Action</th>
+            <th>Interviews & Private Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let app of applications">
+            <td>
+              <strong style="font-size: 14px;">{{ app.candidateName || app.employeeId }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Emp ID: {{ app.employeeId }} · {{ app.email }}</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" *ngIf="app.currentDesignation">
+                Current: {{ app.currentDesignation }} ({{ app.experienceYears }} yrs exp)
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);" *ngIf="app.skills">
+                Skills: {{ app.skills }}
+              </div>
+              <div style="margin-top: 6px;" *ngIf="app.documentId">
+                <a [href]="getDownloadUrl(app.documentId)" target="_blank" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 11px; font-weight: 500;">📄 Download Resume</a>
+              </div>
+            </td>
+
+            <td>
+              <strong>{{ app.jobSnapshotDesignation }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Ref: #{{ app.jobId }} · {{ app.jobSnapshotLocation }}</div>
+              <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;" *ngIf="app.coverNote">
+                Note: "{{ app.coverNote }}"
+              </div>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(app.status)">{{ app.status }}</span>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">{{ app.submittedAt | date:'short' }}</div>
+            </td>
+
+            <td>
+              <select class="form-control" style="font-size: 12px; padding: 4px 8px;" [ngModel]="app.status" (ngModelChange)="updateStage(app, $event)" [disabled]="app.status === 'WITHDRAWN'">
+                <option value="SUBMITTED">SUBMITTED</option>
+                <option value="UNDER_REVIEW">UNDER_REVIEW</option>
+                <option value="SHORTLISTED">SHORTLISTED</option>
+                <option value="INTERVIEW_SCHEDULED">INTERVIEW_SCHEDULED</option>
+                <option value="SELECTED">SELECTED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="WITHDRAWN" disabled>WITHDRAWN</option>
+              </select>
+              <div *ngIf="app.status === 'WITHDRAWN'" style="font-size: 10px; color: var(--danger-text); margin-top: 4px; font-weight: 600;">Candidate Withdrawn</div>
+            </td>
+
+            <td>
+              <button (click)="openInterviewModal(app)" class="btn btn-primary btn-sm" style="margin-bottom: 8px; width: 100%;" [disabled]="app.status === 'WITHDRAWN' || app.status === 'REJECTED'">
+                Schedule Interview
+              </button>
+              <div>
+                <input type="text" class="form-control" style="font-size: 11px; padding: 4px;" placeholder="Private HR reviewer notes..." [(ngModel)]="app.reviewerNotes" (blur)="saveReviewerNotes(app)" [disabled]="app.status === 'WITHDRAWN'">
+              </div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Notes stored privately for HR</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Interview Schedule Modal -->
+  <div *ngIf="selectedAppForInterview" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h3 style="font-size: 16px; font-weight: 600;">Schedule Interview</h3>
+        <button (click)="closeInterviewModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">&times;</button>
       </div>
-      <div class="modal-body p-4">
 
-        <div *ngIf="selectedCandidateForInterview" class="alert alert-light border mb-3 small">
-          <h6 class="fw-bold mb-1">Candidate: {{ selectedCandidateForInterview.firstName }} {{ selectedCandidateForInterview.lastName }}</h6>
-          <p class="text-muted mb-0">Emp ID: {{ selectedCandidateForInterview.employeeId }} | Email: {{ selectedCandidateForInterview.email }}</p>
-        </div>
-
-        <div *ngIf="interviewSuccessMsg" class="alert alert-success py-2 small mb-3">
-          <i class="fa-solid fa-circle-check me-1"></i> {{ interviewSuccessMsg }}
-        </div>
-
-        <div *ngIf="interviewErrorMsg" class="alert alert-danger py-2 small mb-3">
-          <i class="fa-solid fa-circle-exclamation me-1"></i> {{ interviewErrorMsg }}
-        </div>
-
-        <form (ngSubmit)="submitScheduleInterview()">
-          
-          <!-- Interview Mode Dropdown -->
-          <div class="mb-3">
-            <label for="interviewMode" class="form-label fw-semibold small">Interview Mode</label>
-            <select id="interviewMode" name="interviewMode" class="form-select fw-semibold" [(ngModel)]="interviewData.interviewMode" required>
-              <option value="OFFLINE">OFFLINE (In-Person / Room)</option>
-              <option value="ONLINE">ONLINE (Video / Link)</option>
-            </select>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="interviewDate" class="form-label fw-semibold small">Interview Date</label>
-              <input type="date" class="form-control" id="interviewDate" name="interviewDate" [(ngModel)]="interviewData.interviewDate" required />
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="interviewTime" class="form-label fw-semibold small">Interview Time</label>
-              <input type="text" class="form-control" id="interviewTime" name="interviewTime" [(ngModel)]="interviewData.interviewTime" required placeholder="Enter Time" />
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label for="interviewer" class="form-label fw-semibold small">Interviewer(s)</label>
-            <input type="text" class="form-control" id="interviewer" name="interviewer" [(ngModel)]="interviewData.interviewer" required placeholder="Enter Interviewer Name / Panel" />
-          </div>
-
-          <!-- OFFLINE: Meeting Room / Location Required -->
-          <div *ngIf="interviewData.interviewMode === 'OFFLINE'" class="mb-4">
-            <label for="location" class="form-label fw-semibold small">Meeting Room Name / Location <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="location" name="location" [(ngModel)]="interviewData.location" required placeholder="Enter Meeting Room Name" />
-          </div>
-
-          <!-- ONLINE: Meeting Link Required -->
-          <div *ngIf="interviewData.interviewMode === 'ONLINE'" class="mb-4">
-            <label for="meetingLink" class="form-label fw-semibold small">Online Meeting Link <span class="text-danger">*</span></label>
-            <input type="url" class="form-control" id="meetingLink" name="meetingLink" [(ngModel)]="interviewData.meetingLink" required placeholder="Enter Online Meeting Link" />
-          </div>
-
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
-            <button type="submit" [disabled]="isScheduling" class="btn btn-primary btn-sm px-4 fw-semibold">
-              <span *ngIf="isScheduling" class="spinner-border spinner-border-sm me-1"></span>
-              Confirm & Notify Candidate
-            </button>
-          </div>
-        </form>
-
+      <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+        <div style="font-weight: 600; font-size: 13px;">Candidate: {{ selectedAppForInterview.candidateName }} (ID: {{ selectedAppForInterview.employeeId }})</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Role: {{ selectedAppForInterview.jobSnapshotDesignation }}</div>
       </div>
+
+      <div *ngIf="interviewErrorMsg" class="badge badge-rejected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none;">
+        {{ interviewErrorMsg }}
+      </div>
+
+      <div *ngIf="interviewSuccessMsg" class="badge badge-selected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none;">
+        {{ interviewSuccessMsg }}
+      </div>
+
+      <form (ngSubmit)="submitScheduleInterview()">
+        <div class="form-group">
+          <label>Interview Mode</label>
+          <select class="form-control" [(ngModel)]="interviewData.interviewMode" name="mode">
+            <option value="OFFLINE">OFFLINE (In-Person / Meeting Room)</option>
+            <option value="ONLINE">ONLINE (Virtual / Video Call Link)</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" class="form-control" [(ngModel)]="interviewData.interviewDate" name="date" required>
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" class="form-control" [(ngModel)]="interviewData.interviewTime" name="time" required>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="interviewData.interviewMode === 'OFFLINE'">
+          <label>Meeting Room / Building Location</label>
+          <input type="text" class="form-control" placeholder="e.g. Conference Room 302, Building A" [(ngModel)]="interviewData.location" name="loc">
+        </div>
+
+        <div class="form-group" *ngIf="interviewData.interviewMode === 'ONLINE'">
+          <label>Video Call / Meeting Link</label>
+          <input type="text" class="form-control" placeholder="e.g. https://meet.company.com/interview-123" [(ngModel)]="interviewData.meetingLink" name="link">
+        </div>
+
+        <div class="form-group">
+          <label>Interviewer Name / Panel</label>
+          <input type="text" class="form-control" placeholder="e.g. Sarah Jenkins (Tech Lead)" [(ngModel)]="interviewData.interviewer" name="interviewer" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+          <button type="button" (click)="closeInterviewModal()" class="btn btn-secondary btn-sm">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isScheduling">
+            <span *ngIf="isScheduling">Scheduling...</span>
+            <span *ngIf="!isScheduling">Schedule & Notify Candidate</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

@@ -1,94 +1,52 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" routerLink="/">
-            <i class="fa-solid fa-briefcase me-2"></i>IJP Portal
-        </a>
+<header class="app-header">
+  <div class="header-container">
+    <a routerLink="/" class="brand-title">
+      Internal Job Posting <span class="brand-badge">Enterprise</span>
+    </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <nav>
+      <ul class="nav-links">
+        <!-- Unauthenticated -->
+        <ng-container *ngIf="!authService.isLoggedIn()">
+          <li class="nav-item"><a routerLink="/login" routerLinkActive="active">Sign In</a></li>
+          <li class="nav-item"><a routerLink="/register" routerLinkActive="active">Register</a></li>
+        </ng-container>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <!-- Employee Navigation -->
+        <ng-container *ngIf="authService.isEmployee()">
+          <li class="nav-item"><a routerLink="/employee-dashboard" routerLinkActive="active">Dashboard</a></li>
+          <li class="nav-item"><a routerLink="/jobs" routerLinkActive="active">Jobs</a></li>
+          <li class="nav-item"><a routerLink="/my-applications" routerLinkActive="active">My Applications</a></li>
+          <li class="nav-item"><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
+          <li class="nav-item"><a routerLink="/notifications" routerLinkActive="active">Notifications</a></li>
+        </ng-container>
 
-                <li class="nav-item">
-                    <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-                        Home
-                    </a>
-                </li>
+        <!-- HR Navigation -->
+        <ng-container *ngIf="authService.isAdmin()">
+          <li class="nav-item"><a routerLink="/admin-dashboard" routerLinkActive="active">Dashboard</a></li>
+          <li class="nav-item"><a routerLink="/add-job" routerLinkActive="active">Job Postings</a></li>
+          <li class="nav-item"><a routerLink="/hr-applications" routerLinkActive="active">Applications</a></li>
+          <li class="nav-item"><a routerLink="/hr-interviews" routerLinkActive="active">Interviews</a></li>
+          <li class="nav-item"><a routerLink="/hr-designations" routerLinkActive="active">Designations</a></li>
+        </ng-container>
+      </ul>
+    </nav>
 
-                <ng-container *ngIf="!authService.isLoggedIn()">
-                    <li class="nav-item">
-                        <a class="nav-link cursor-pointer" (click)="scrollToSection('open-positions')">
-                            Open Positions
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link cursor-pointer" (click)="scrollToSection('about-company')">
-                            About
-                        </a>
-                    </li>
-                </ng-container>
-
-                <ng-container *ngIf="authService.isEmployee()">
-                    <li class="nav-item">
-                        <a class="nav-link cursor-pointer" (click)="scrollToSection('open-positions')">
-                            Apply for Job / Open Positions
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" routerLink="/notifications" routerLinkActive="active">
-                            Notifications
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" routerLink="/employee-dashboard" routerLinkActive="active">
-                            Employee Dashboard
-                        </a>
-                    </li>
-                </ng-container>
-
-                <ng-container *ngIf="authService.isAdmin()">
-                    <li class="nav-item">
-                        <a class="nav-link" routerLink="/admin-dashboard" routerLinkActive="active">
-                            Admin Dashboard
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link cursor-pointer" (click)="scrollToSection('open-positions')">
-                            Job Postings
-                        </a>
-                    </li>
-                </ng-container>
-
-            </ul>
-
-            <div class="d-flex align-items-center gap-2">
-                <a *ngIf="!authService.isLoggedIn()" routerLink="/login" class="btn btn-light text-primary fw-semibold btn-sm px-3">
-                    Login
-                </a>
-
-                <ng-container *ngIf="authService.isLoggedIn()">
-          <span class="text-white small me-2">
-            <i class="fa-solid fa-user-circle me-1"></i>
-              {{ authService.currentUserValue?.name }}
-              ({{ authService.currentUserValue?.role }})
-          </span>
-
-                    <button (click)="onLogout()" class="btn btn-outline-light btn-sm px-3">
-                        Logout
-                    </button>
-                </ng-container>
-            </div>
-
-        </div>
+    <div class="user-controls">
+      <ng-container *ngIf="authService.isLoggedIn()">
+        <span class="user-info">
+          {{ authService.currentUserValue?.name }}
+          <span class="user-role-tag" *ngIf="!authService.currentUserValue?.name?.toLowerCase()?.includes('admin')">{{ authService.currentUserValue?.role }}</span>
+        </span>
+        <button (click)="onLogout()" class="btn-logout">Sign Out</button>
+      </ng-container>
+      <ng-container *ngIf="!authService.isLoggedIn()">
+        <a routerLink="/login" class="btn btn-primary btn-sm">Sign In</a>
+      </ng-container>
     </div>
-</nav>
+  </div>
+</header>
 
-<main class="main-container">
-    <router-outlet></router-outlet>
+<main class="main-content">
+  <router-outlet></router-outlet>
 </main>

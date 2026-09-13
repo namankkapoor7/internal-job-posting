@@ -1,38 +1,44 @@
 package com.example.candidateservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notification", indexes = {
+    @Index(name = "idx_notif_emp", columnList = "employeeId")
+})
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long candidateId;
+    @Column(nullable = false)
+    private String employeeId;
+
     private String title;
+
+    @Column(length = 1000)
     private String message;
-    private String type; // "SHORTLISTED", "INTERVIEW_SCHEDULED", "SELECTED", "REJECTED"
+
+    private String type; // "SUBMITTED", "SHORTLISTED", "INTERVIEW_SCHEDULED", "SELECTED", "REJECTED", "WITHDRAWN"
     private boolean isRead;
     private String createdAt;
 
     public Notification() {
         this.isRead = false;
+        this.createdAt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
-    public Notification(Long id, Long candidateId, String title, String message, String type, boolean isRead, String createdAt) {
+    public Notification(Long id, String employeeId, String title, String message, String type, boolean isRead, String createdAt) {
         this.id = id;
-        this.candidateId = candidateId;
+        this.employeeId = employeeId;
         this.title = title;
         this.message = message;
         this.type = type;
         this.isRead = isRead;
-        this.createdAt = createdAt;
+        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
     public Long getId() {
@@ -43,12 +49,12 @@ public class Notification {
         this.id = id;
     }
 
-    public Long getCandidateId() {
-        return candidateId;
+    public String getEmployeeId() {
+        return employeeId;
     }
 
-    public void setCandidateId(Long candidateId) {
-        this.candidateId = candidateId;
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public String getTitle() {

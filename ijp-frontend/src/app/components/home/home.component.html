@@ -1,164 +1,125 @@
-<div class="hero-simple mb-4">
-    <div class="container text-center py-4">
-        <h1 class="fw-bold mb-2 text-primary">
-            <i class="fa-solid fa-briefcase me-2"></i>Internal Job Posting (IJP)
-        </h1>
+<div class="container">
+  <!-- Page Header -->
+  <div style="margin-bottom: 24px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">Internal Job Opportunities</h2>
+    <p style="color: var(--text-secondary); font-size: 13px;">Browse published roles and submit your application internally.</p>
+  </div>
 
-        <p class="lead text-secondary mb-4 fs-5" style="max-width: 700px; margin: 0 auto;">
-            Explore internal career opportunities and grow within the organization.
+  <!-- Search & Filter Card -->
+  <div class="card" style="margin-bottom: 24px;">
+    <form (ngSubmit)="fetchJobs()" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) 120px 100px; gap: 12px; align-items: end;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>Designation / Role</label>
+        <input type="text" class="form-control" placeholder="e.g. Java Full Stack" [(ngModel)]="filterDesignation" name="designation">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>Location</label>
+        <input type="text" class="form-control" placeholder="e.g. Bangalore, Remote" [(ngModel)]="filterLocation" name="location">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>Required Skill</label>
+        <input type="text" class="form-control" placeholder="e.g. Spring Boot, Angular" [(ngModel)]="filterSkill" name="skill">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-sm" style="height: 38px;">Search</button>
+      <button type="button" (click)="resetFilters()" class="btn btn-secondary btn-sm" style="height: 38px;">Reset</button>
+    </form>
+  </div>
+
+  <!-- Job Listings Grid -->
+  <div *ngIf="isLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+    Loading published positions...
+  </div>
+
+  <div *ngIf="!isLoading && jobs.length === 0" class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+    No published positions match your search criteria.
+  </div>
+
+  <div *ngIf="!isLoading && jobs.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+    <div *ngFor="let job of jobs" class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 600; color: var(--primary-color);">{{ job.jobId }}</div>
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 2px;">{{ job.designation }}</h3>
+          </div>
+          <span class="badge badge-published">PUBLISHED</span>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+          <span>📍 {{ job.location }}</span> · <span>💼 {{ job.experience }}</span>
+          <span *ngIf="job.department"> · 🏢 {{ job.department }}</span>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+          {{ job.description }}
         </p>
 
-        <div class="d-flex justify-content-center gap-3">
-            <button
-                    (click)="scrollToPositions()"
-                    class="btn btn-primary px-4 py-2 fw-semibold">
-                <i class="fa-solid fa-search me-1"></i> View Open Positions
-            </button>
-
-            <button
-                    *ngIf="!authService.isLoggedIn()"
-                    (click)="navigateToLogin()"
-                    class="btn btn-outline-primary px-4 py-2 fw-semibold">
-                <i class="fa-solid fa-user me-1"></i> Employee Login
-            </button>
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Skills Required</div>
+          <div style="font-size: 12px; color: var(--text-primary); background: var(--bg-subtle); padding: 6px 10px; border-radius: var(--radius-sm);">
+            {{ job.skillSet }}
+          </div>
         </div>
+      </div>
+
+      <div style="padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; font-weight: 500; color: var(--text-secondary);" *ngIf="job.salaryMin && job.salaryMax">
+          ₹{{ (job.salaryMin / 100000) | number:'1.1-1' }}L - ₹{{ (job.salaryMax / 100000) | number:'1.1-1' }}L
+        </span>
+        <button (click)="openApplyModal(job)" class="btn btn-primary btn-sm">Apply Now</button>
+      </div>
     </div>
-</div>
+  </div>
 
-<div class="container my-4">
+  <!-- Apply Modal -->
+  <div *ngIf="selectedJob" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h3 style="font-size: 16px; font-weight: 600;">Submit Application</h3>
+        <button (click)="closeApplyModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
 
-    <div id="about-company" class="card shadow-sm border-0 mb-5 rounded-3">
-        <div class="card-body p-4 text-center">
-            <h4 class="fw-bold text-primary mb-2">
-                <i class="fa-solid fa-building me-2"></i>About Our Company
-            </h4>
+      <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+        <div style="font-weight: 600; font-size: 14px;">{{ selectedJob.designation }}</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Job Ref: {{ selectedJob.jobId }} · {{ selectedJob.location }}</div>
+      </div>
 
-            <p class="text-secondary mb-0" style="max-width: 800px; margin: 0 auto; line-height: 1.6;">
-                We are a global technology-driven multinational organization committed to delivering innovative solutions,
-                empowering employees, and creating opportunities for professional growth. Explore internal roles to take your career to the next level.
-            </p>
+      <div *ngIf="errorMessage" class="badge badge-rejected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="badge badge-selected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
+        {{ successMessage }}
+      </div>
+
+      <form (ngSubmit)="submitApplication()">
+        <div class="form-group">
+          <label>Cover Note (Optional)</label>
+          <textarea class="form-control" rows="3" placeholder="Briefly state your motivation for this role..." [(ngModel)]="coverNote" name="note"></textarea>
         </div>
+
+        <div class="form-group">
+          <label>Attached Document / Resume (Optional)</label>
+          <select class="form-control" [(ngModel)]="selectedDocumentId" name="docId" *ngIf="userDocuments.length > 0">
+            <option [ngValue]="null">-- No Document Attached --</option>
+            <option *ngFor="let doc of userDocuments" [value]="doc.id">{{ doc.fileName }} (Uploaded {{ doc.uploadedAt | date:'shortDate' }})</option>
+          </select>
+          <div *ngIf="userDocuments.length === 0" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+            No documents uploaded yet. You can attach documents from your Profile page.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" (click)="closeApplyModal()" class="btn btn-secondary btn-sm">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isApplying">
+            <span *ngIf="isApplying">Submitting...</span>
+            <span *ngIf="!isApplying">Confirm Application</span>
+          </button>
+        </div>
+      </form>
     </div>
-
-    <div id="open-positions" class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold text-dark mb-0">
-                <i class="fa-solid fa-list-check text-primary me-2"></i>Available Internal Positions
-            </h4>
-
-            <button
-                    class="btn btn-outline-primary btn-sm px-3"
-                    (click)="fetchOpenJobs()">
-                <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
-            </button>
-        </div>
-
-        <div *ngIf="isLoading" class="text-center py-5">
-            <div
-                    class="spinner-border text-primary"
-                    role="status"
-                    style="width: 2.5rem; height: 2.5rem;">
-                <span class="visually-hidden">Loading jobs...</span>
-            </div>
-
-            <p class="mt-2 text-muted small">
-                Fetching available jobs...
-            </p>
-        </div>
-
-        <div
-                *ngIf="errorMessage && !isLoading"
-                class="alert alert-danger shadow-sm mb-4"
-                role="alert">
-            <i class="fa-solid fa-circle-exclamation me-2"></i>
-            {{ errorMessage }}
-        </div>
-
-        <div
-                *ngIf="!isLoading && !errorMessage && openJobs.length === 0"
-                class="text-center py-5 bg-white border rounded shadow-sm">
-
-            <i class="fa-solid fa-folder-open display-4 text-muted mb-3"></i>
-
-            <h5 class="fw-bold text-dark">
-                No Open Opportunities
-            </h5>
-
-            <p class="text-muted small mb-3">
-                There are currently no open internal positions. Please check back later for new opportunities.
-            </p>
-
-            <button
-                    class="btn btn-primary btn-sm px-4"
-                    (click)="fetchOpenJobs()">
-                <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
-            </button>
-        </div>
-
-        <div
-                *ngIf="!isLoading && openJobs.length > 0"
-                class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-
-            <div class="col" *ngFor="let job of openJobs">
-
-                <div class="card h-100 job-card shadow-sm">
-
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
-            <span class="badge bg-primary font-mono px-3 py-1.5 fs-6">
-              Job Code: {{ job.jobId }}
-            </span>
-
-                        <span class="badge bg-success px-3 py-1">
-              <i class="fa-solid fa-circle me-1 small"></i>{{ job.status }}
-            </span>
-                    </div>
-
-                    <div class="card-body p-4 d-flex flex-column">
-
-                        <h5 class="card-title fw-bold text-dark mb-2">
-                            {{ job.designation }}
-                        </h5>
-
-                        <p class="card-text text-muted small mb-3 flex-grow-1">
-                            {{ job.description }}
-                        </p>
-
-                        <ul class="list-unstyled mb-4 small text-secondary">
-
-                            <li class="mb-1.5">
-                                <i class="fa-solid fa-location-dot text-danger me-2"></i>
-                                <strong>Location:</strong> {{ job.location }}
-                            </li>
-
-                            <li class="mb-1.5">
-                                <i class="fa-solid fa-code text-primary me-2"></i>
-                                <strong>Skills:</strong> {{ job.skillSet }}
-                            </li>
-
-                            <li class="mb-1.5">
-                                <i class="fa-solid fa-user-clock text-info me-2"></i>
-                                <strong>Experience:</strong> {{ job.experience }}
-                            </li>
-
-                            <li class="mb-1.5">
-                                <i class="fa-solid fa-sack-dollar text-success me-2"></i>
-                                <strong>Salary:</strong>
-                                ₹{{ job.salaryMin | number }} - ₹{{ job.salaryMax | number }}
-                            </li>
-
-                        </ul>
-
-                        <button
-                                (click)="onApplyJob(job)"
-                                class="btn btn-primary w-100 fw-semibold py-2">
-                            <i class="fa-solid fa-paper-plane me-1"></i> Apply Now
-                        </button>
-
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
+  </div>
 </div>

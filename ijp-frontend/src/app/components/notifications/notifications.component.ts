@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CandidateService } from '../../services/candidate.service';
+import { CandidateService, AppNotification } from '../../services/candidate.service';
 import { AuthService } from '../../services/auth.service';
-import { AppNotification } from '../../models/notification.model';
 
 @Component({
   selector: 'app-notifications',
@@ -28,57 +27,44 @@ export class NotificationsComponent implements OnInit {
   }
 
   loadNotifications(): void {
-    const currentUser = this.authService.currentUserValue;
-    if (!currentUser) {
+    if (!this.authService.isLoggedIn()) {
       this.errorMessage = 'Please log in to view your notifications.';
-      return;
-    }
-
-    const identifier = currentUser.employeeId || currentUser.email || currentUser.id;
-    if (!identifier) {
-      this.errorMessage = 'Employee identity not found. Please re-login.';
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.candidateService.getNotificationsForEmployee(identifier).subscribe({
+    this.candidateService.getMyNotifications().subscribe({
       next: (data) => {
         this.notifications = data;
+        this.unreadCount = data.filter(n => !n.read).length;
         this.isLoading = false;
-        this.loadUnreadCount(identifier);
       },
       error: (err) => {
         this.errorMessage = 'Failed to load notifications.';
         this.isLoading = false;
-        console.error(err);
       }
     });
   }
 
-  loadUnreadCount(identifier: string | number): void {
-    this.candidateService.getUnreadNotificationCountForEmployee(identifier).subscribe({
-      next: (res) => this.unreadCount = res.count,
-      error: (err) => console.error(err)
-    });
-  }
-
   markAsRead(notification: AppNotification): void {
-    if (notification.isRead || !notification.id) return;
+    if (notification.read || !notification.id) return;
 
     this.candidateService.markNotificationAsRead(notification.id).subscribe({
       next: () => {
-        notification.isRead = true;
-        const currentUser = this.authService.currentUserValue;
-        if (currentUser) {
-          const identifier = currentUser.employeeId || currentUser.email || currentUser.id;
-          if (identifier) {
-            this.loadUnreadCount(identifier);
-          }
-        }
+        notification.read = true;
+        this.unreadCount = this.notifications.filter(n => !n.read).length;
       },
       error: (err) => console.error('Failed to mark notification as read', err)
     });
+  }
+
+  getTypeClass(type: string): string {
+    const t = type ? type.toLowerCase() : '';
+    if (t.includes('shortlisted') || t.includes('selected')) return 'badge-selected';
+    if (t.includes('interview')) return 'badge-interview_scheduled';
+    if (t.includes('rejected') || t.includes('withdrawn')) return 'badge-rejected';
+    return 'badge-submitted';
   }
 }

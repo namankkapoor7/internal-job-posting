@@ -10,6 +10,9 @@ export interface UserSession {
   email: string;
   employeeId?: string;
   role: 'EMPLOYEE' | 'ADMIN';
+  token?: string;
+  designation?: string;
+  department?: string;
 }
 
 @Injectable({
@@ -17,14 +20,12 @@ export interface UserSession {
 })
 export class AuthService {
 
+  private authApiUrl = 'http://localhost:8080/api/auth';
   private adminApiUrl = 'http://localhost:8080/api/admin';
-  private candidateApiUrl = 'http://localhost:8080/api/candidates';
+  private meApiUrl = 'http://localhost:8080/api/me';
 
-  private currentUserSubject =
-    new BehaviorSubject<UserSession | null>(null);
-
-  public currentUser$ =
-    this.currentUserSubject.asObservable();
+  private currentUserSubject = new BehaviorSubject<UserSession | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -35,15 +36,18 @@ export class AuthService {
 
   private loadSessionFromStorage(): void {
     const savedSession = localStorage.getItem('ijp_session');
-
     if (savedSession) {
       try {
         const session: UserSession = JSON.parse(savedSession);
         this.currentUserSubject.next(session);
       } catch (e) {
-        localStorage.removeItem('ijp_session');
+        this.clearSession();
       }
     }
+  }
+
+  public getToken(): string | null {
+    return localStorage.getItem('ijp_token') || this.currentUserSubject.value?.token || null;
   }
 
   public get currentUserValue(): UserSession | null {
@@ -51,7 +55,7 @@ export class AuthService {
   }
 
   public isLoggedIn(): boolean {
-    return this.currentUserSubject.value !== null;
+    return this.currentUserSubject.value !== null && !!this.getToken();
   }
 
   public isAdmin(): boolean {
@@ -62,89 +66,67 @@ export class AuthService {
     return this.currentUserSubject.value?.role === 'EMPLOYEE';
   }
 
-  // =========================
-  // ADMIN LOGIN
-  // =========================
-
-  loginAdmin(email: string, password: string): Observable<any> {
-    return this.http.post<any>(
-      `${this.adminApiUrl}/login`,
-      {
-        email: email,
-        password: password
-      }
-    ).pipe(
+  public loginAdmin(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.adminApiUrl}/login`, { email, password }).pipe(
       tap((res) => {
-
-        if (
-          res.status === 'SUCCESS' ||
-          res.message === 'Login successful'
-        ) {
-
+        if (res.token || res.status === 'SUCCESS' || res.message === 'Login successful') {
           const session: UserSession = {
             name: 'HR Admin',
             email: email,
-            role: 'ADMIN'
+            role: 'ADMIN',
+            employeeId: 'HR001',
+            token: res.token
           };
-
-          localStorage.setItem(
-            'ijp_session',
-            JSON.stringify(session)
-          );
-
-          this.currentUserSubject.next(session);
+          this.setSession(session, res.token);
         }
       })
     );
   }
 
-  // =========================
-  // EMPLOYEE LOGIN
-  // =========================
-
-  loginEmployee(
-    email: string,
-    password: string
-  ): Observable<any> {
-
-    return this.http.post<any>(
-      `${this.candidateApiUrl}/login`,
-      {
-        email: email,
-        password: password
-      }
-    ).pipe(
+  public loginEmployee(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.authApiUrl}/login`, { email, password }).pipe(
       tap((res) => {
-
         const session: UserSession = {
           id: res.id,
           userId: res.id,
           name: `${res.firstName} ${res.lastName}`,
           email: res.email,
           employeeId: res.employeeId,
-          role: 'EMPLOYEE'
+          designation: res.designation,
+          department: res.department,
+          role: 'EMPLOYEE',
+          token: res.token
         };
-
-        localStorage.setItem(
-          'ijp_session',
-          JSON.stringify(session)
-        );
-
-        this.currentUserSubject.next(session);
+        this.setSession(session, res.token);
       })
     );
   }
 
-  // =========================
-  // LOGOUT
-  // =========================
+  public registerEmployee(employeeData: any): Observable<any> {
+    return this.http.post<any>(`${this.authApiUrl}/register`, employeeData);
+  }
 
-  logout(): void {
+  public fetchProfile(): Observable<any> {
+    return this.http.get<any>(this.meApiUrl);
+  }
 
+  private setSession(session: UserSession, token?: string): void {
+    if (token) {
+      localStorage.setItem('ijp_token', token);
+    }
+    localStorage.setItem('ijp_session', JSON.stringify(session));
+    this.currentUserSubject.next(session);
+  }
+
+  private clearSession(): void {
+    localStorage.removeItem('ijp_token');
     localStorage.removeItem('ijp_session');
-
+    localStorage.removeItem('isAdminLoggedIn');
     this.currentUserSubject.next(null);
+  }
 
+  public logout(): void {
+    this.clearSession();
     this.router.navigate(['/login']);
   }
 }

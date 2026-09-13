@@ -4,8 +4,10 @@ public class JobPostingDto {
 
     private Long id;
     private String jobId;
+    private String title;
     private String description;
     private String designation;
+    private String department;
     private String location;
     private String skillSet;
     private String experience;
@@ -20,6 +22,17 @@ public class JobPostingDto {
         this.id = id;
         this.jobId = jobId;
         this.designation = designation;
+        this.title = designation;
+        this.status = status;
+    }
+
+    public JobPostingDto(Long id, String jobId, String title, String designation, String department, String location, String status) {
+        this.id = id;
+        this.jobId = jobId;
+        this.title = title;
+        this.designation = designation;
+        this.department = department;
+        this.location = location;
         this.status = status;
     }
 
@@ -39,6 +52,14 @@ public class JobPostingDto {
         this.jobId = jobId;
     }
 
+    public String getTitle() {
+        return title != null ? title : designation;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -53,6 +74,14 @@ public class JobPostingDto {
 
     public void setDesignation(String designation) {
         this.designation = designation;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
     }
 
     public String getLocation() {

@@ -1,22 +1,25 @@
 package com.example.candidateservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "interview")
+@Table(name = "interview", indexes = {
+    @Index(name = "idx_int_app", columnList = "applicationId"),
+    @Index(name = "idx_int_emp", columnList = "employeeId")
+})
 public class Interview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long applicationId; // Maps to candidateId / applicationId
-    private Long candidateId;
+    @Column(nullable = false)
+    private Long applicationId;
+
+    private String employeeId;
     private Long jobId;
+
     private String interviewMode; // "ONLINE", "OFFLINE"
     private String interviewDate;
     private String interviewTime;
@@ -24,17 +27,23 @@ public class Interview {
     private String meetingLink; // Meeting link for ONLINE
     private String interviewer;
     private String status; // "SCHEDULED", "COMPLETED", "CANCELLED"
+    
+    @Column(length = 2000)
+    private String feedbackNotes;
+
+    private LocalDateTime createdAt;
 
     public Interview() {
         this.status = "SCHEDULED";
+        this.createdAt = LocalDateTime.now();
     }
 
-    public Interview(Long id, Long applicationId, Long candidateId, Long jobId, String interviewMode,
+    public Interview(Long id, Long applicationId, String employeeId, Long jobId, String interviewMode,
                      String interviewDate, String interviewTime, String location, String meetingLink, 
                      String interviewer, String status) {
         this.id = id;
-        this.applicationId = applicationId != null ? applicationId : candidateId;
-        this.candidateId = candidateId;
+        this.applicationId = applicationId;
+        this.employeeId = employeeId;
         this.jobId = jobId;
         this.interviewMode = interviewMode != null ? interviewMode : "OFFLINE";
         this.interviewDate = interviewDate;
@@ -43,6 +52,7 @@ public class Interview {
         this.meetingLink = meetingLink;
         this.interviewer = interviewer;
         this.status = status != null ? status : "SCHEDULED";
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -61,12 +71,12 @@ public class Interview {
         this.applicationId = applicationId;
     }
 
-    public Long getCandidateId() {
-        return candidateId;
+    public String getEmployeeId() {
+        return employeeId;
     }
 
-    public void setCandidateId(Long candidateId) {
-        this.candidateId = candidateId;
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public Long getJobId() {
@@ -131,5 +141,21 @@ public class Interview {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getFeedbackNotes() {
+        return feedbackNotes;
+    }
+
+    public void setFeedbackNotes(String feedbackNotes) {
+        this.feedbackNotes = feedbackNotes;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

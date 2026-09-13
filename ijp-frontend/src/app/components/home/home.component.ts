@@ -1,68 +1,129 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { JobService } from '../../services/job.service';
+import { JobService, JobPosting } from '../../services/job.service';
 import { AuthService } from '../../services/auth.service';
-import { JobPosting } from '../../models/job.model';
+import { CandidateService, DocumentMeta } from '../../services/candidate.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
 
-  openJobs: JobPosting[] = [];
+  jobs: JobPosting[] = [];
   isLoading = true;
   errorMessage = '';
+  successMessage = '';
+
+  // Search Filters
+  filterDesignation = '';
+  filterLocation = '';
+  filterSkill = '';
+
+  // Apply Modal State
+  selectedJob: JobPosting | null = null;
+  coverNote = '';
+  selectedDocumentId: number | null = null;
+  userDocuments: DocumentMeta[] = [];
+  isApplying = false;
 
   constructor(
     private jobService: JobService,
     public authService: AuthService,
+    private candidateService: CandidateService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.fetchOpenJobs();
+    this.fetchJobs();
+    if (this.authService.isLoggedIn() && this.authService.isEmployee()) {
+      this.loadUserDocuments();
+    }
   }
 
-  fetchOpenJobs(): void {
+  fetchJobs(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.jobService.getOpenJobs().subscribe({
-      next: (jobs) => {
-        this.openJobs = jobs;
+    this.jobService.getPublishedJobs({
+      designation: this.filterDesignation,
+      location: this.filterLocation,
+      skill: this.filterSkill
+    }).subscribe({
+      next: (data) => {
+        this.jobs = data;
         this.isLoading = false;
       },
-      error: (err) => {
-        this.errorMessage = 'Failed to load open jobs. Please ensure backend microservices are running.';
+      error: () => {
+        this.errorMessage = 'Could not load job postings.';
         this.isLoading = false;
-        console.error('Error fetching open jobs:', err);
       }
     });
   }
 
-  onApplyJob(job: JobPosting): void {
-    const targetUrl = `/apply?jobId=${job.id}&code=${encodeURIComponent(job.jobId)}&title=${encodeURIComponent(job.designation)}`;
-    
-    if (this.authService.isLoggedIn() && this.authService.isEmployee()) {
-      this.router.navigateByUrl(targetUrl);
-    } else {
-      // Prompt employee login and preserve returnUrl to selected job
-      this.router.navigate(['/login'], { queryParams: { returnUrl: targetUrl } });
-    }
+  loadUserDocuments(): void {
+    this.candidateService.getMyDocuments().subscribe({
+      next: (docs) => {
+        this.userDocuments = docs;
+      }
+    });
   }
 
-  scrollToPositions(): void {
-    const element = document.getElementById('open-positions');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+  resetFilters(): void {
+    this.filterDesignation = '';
+    this.filterLocation = '';
+    this.filterSkill = '';
+    this.fetchJobs();
   }
 
-  navigateToLogin(): void {
-    this.router.navigate(['/login']);
+  openApplyModal(job: JobPosting): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    if (this.authService.isAdmin()) {
+      alert('HR Admins cannot apply for jobs. Please log in with an Employee account.');
+      return;
+    }
+    this.selectedJob = job;
+    this.coverNote = '';
+    this.selectedDocumentId = this.userDocuments.length > 0 ? this.userDocuments[0].id : null;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  closeApplyModal(): void {
+    this.selectedJob = null;
+  }
+
+  submitApplication(): void {
+    if (!this.selectedJob || !this.selectedJob.id) return;
+
+    this.isApplying = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.candidateService.applyForJob(
+      this.selectedJob.id,
+      this.coverNote,
+      this.selectedDocumentId || undefined
+    ).subscribe({
+      next: () => {
+        this.isApplying = false;
+        this.successMessage = 'Application submitted successfully!';
+        setTimeout(() => {
+          this.closeApplyModal();
+          this.router.navigate(['/my-applications']);
+        }, 1200);
+      },
+      error: (err) => {
+        this.isApplying = false;
+        this.errorMessage = err.error?.message || 'Failed to submit application. You may have already applied for this job.';
+      }
+    });
   }
 }
