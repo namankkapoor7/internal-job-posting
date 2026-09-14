@@ -40,12 +40,24 @@ public class JobPostingService {
         }
     }
 
-    public JobPosting createJob(JobPosting jobPosting) {
+    private void validateJobPostingInput(JobPosting jobPosting) {
         if (jobPosting == null) {
             throw new RuntimeException("Job posting object cannot be null!");
         }
+        if (jobPosting.getTitle() == null || jobPosting.getTitle().trim().isEmpty()) {
+            throw new RuntimeException("Job title is required!");
+        }
         if (jobPosting.getDesignation() == null || jobPosting.getDesignation().trim().isEmpty()) {
             throw new RuntimeException("Job designation is required!");
+        }
+        if (jobPosting.getLocation() == null || jobPosting.getLocation().trim().isEmpty()) {
+            throw new RuntimeException("Job location is required!");
+        }
+        if (jobPosting.getDescription() == null || jobPosting.getDescription().trim().isEmpty()) {
+            throw new RuntimeException("Job description is required!");
+        }
+        if (jobPosting.getExperience() == null || jobPosting.getExperience().trim().isEmpty()) {
+            throw new RuntimeException("Job experience requirement is required!");
         }
         if (jobPosting.getSalaryMin() != null && jobPosting.getSalaryMin() < 0) {
             throw new RuntimeException("Minimum salary cannot be negative!");
@@ -53,6 +65,10 @@ public class JobPostingService {
         if (jobPosting.getSalaryMin() != null && jobPosting.getSalaryMax() != null && jobPosting.getSalaryMax() < jobPosting.getSalaryMin()) {
             throw new RuntimeException("Maximum salary cannot be less than minimum salary!");
         }
+    }
+
+    public JobPosting createJob(JobPosting jobPosting) {
+        validateJobPostingInput(jobPosting);
         if (jobPosting.getStatus() == null || jobPosting.getStatus().trim().isEmpty()) {
             jobPosting.setStatus("OPEN");
         }
@@ -112,6 +128,7 @@ public class JobPostingService {
             if (updatedJob.getSalaryMin() != null) existingJob.setSalaryMin(updatedJob.getSalaryMin());
             if (updatedJob.getSalaryMax() != null) existingJob.setSalaryMax(updatedJob.getSalaryMax());
             if (updatedJob.getStatus() != null) existingJob.setStatus(updatedJob.getStatus());
+            validateJobPostingInput(existingJob);
             return jobPostingRepository.save(existingJob);
         }
         throw new RuntimeException("Job posting with ID " + id + " not found!");

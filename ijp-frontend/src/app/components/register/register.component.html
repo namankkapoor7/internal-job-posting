@@ -21,22 +21,32 @@
         <div class="row">
           <div class="col-md-6 mb-3">
             <label for="regFirstName" class="form-label fw-semibold small">First Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="regFirstName" name="firstName" [(ngModel)]="candidate.firstName" required placeholder="First Name" autocomplete="off" />
+            <input type="text" class="form-control" id="regFirstName" name="firstName" [(ngModel)]="candidate.firstName" #regFirstNameModel="ngModel" pattern="^[a-zA-Z\s'-]+$" required placeholder="First Name" autocomplete="off" />
+            <div *ngIf="regFirstNameModel.invalid && (regFirstNameModel.dirty || regFirstNameModel.touched)" class="text-danger extra-small mt-1">
+              Letters, spaces, hyphens, and apostrophes only.
+            </div>
           </div>
           <div class="col-md-6 mb-3">
             <label for="regLastName" class="form-label fw-semibold small">Last Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="regLastName" name="lastName" [(ngModel)]="candidate.lastName" required placeholder="Last Name" autocomplete="off" />
+            <input type="text" class="form-control" id="regLastName" name="lastName" [(ngModel)]="candidate.lastName" #regLastNameModel="ngModel" pattern="^[a-zA-Z\s'-]+$" required placeholder="Last Name" autocomplete="off" />
+            <div *ngIf="regLastNameModel.invalid && (regLastNameModel.dirty || regLastNameModel.touched)" class="text-danger extra-small mt-1">
+              Letters, spaces, hyphens, and apostrophes only.
+            </div>
           </div>
         </div>
 
         <div class="row">
           <div class="col-md-6 mb-3">
             <label for="regEmployeeId" class="form-label fw-semibold small">Employee ID <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="regEmployeeId" name="employeeId" [(ngModel)]="candidate.employeeId" required placeholder="e.g. EMP101" autocomplete="off" />
+            <input type="text" class="form-control" id="regEmployeeId" name="employeeId" [(ngModel)]="candidate.employeeId" #regEmpIdModel="ngModel" pattern="^[A-Za-z0-9_-]+$" required placeholder="e.g. EMP101" autocomplete="off" />
+            <div *ngIf="regEmpIdModel.invalid && (regEmpIdModel.dirty || regEmpIdModel.touched)" class="text-danger extra-small mt-1">
+              Alphanumeric, underscores, and hyphens only.
+            </div>
           </div>
           <div class="col-md-6 mb-3">
             <label for="regDob" class="form-label fw-semibold small">Date of Birth <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" id="regDob" name="dob" [(ngModel)]="candidate.dob" required />
+            <input type="date" class="form-control" id="regDob" name="dob" [(ngModel)]="candidate.dob" [max]="maxDobDate" min="1900-01-01" required />
+            <div class="form-text extra-small text-muted">Must be at least 18 years old.</div>
           </div>
         </div>
 
@@ -52,7 +62,10 @@
         <div class="row">
           <div class="col-md-6 mb-3">
             <label for="regPassword" class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
-            <input type="password" class="form-control" id="regPassword" name="password" [(ngModel)]="candidate.password" required placeholder="Enter password" autocomplete="new-password" />
+            <input type="password" class="form-control" id="regPassword" name="password" [(ngModel)]="candidate.password" #regPwdModel="ngModel" minlength="6" required placeholder="Enter password (min 6 chars)" autocomplete="new-password" />
+            <div *ngIf="regPwdModel.invalid && (regPwdModel.dirty || regPwdModel.touched)" class="text-danger extra-small mt-1">
+              Password must be at least 6 characters.
+            </div>
           </div>
           <div class="col-md-6 mb-3">
             <label for="regConfirmPassword" class="form-label fw-semibold small">Confirm Password <span class="text-danger">*</span></label>

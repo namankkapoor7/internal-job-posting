@@ -206,15 +206,15 @@ public class CandidateServiceTest {
             () -> candidateService.registerEmployee(profile)
         );
 
-        assertEquals("Experience years cannot be negative!", ex.getMessage());
+        assertEquals("Experience years must be between 0 and 60!", ex.getMessage());
         verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
-    public void testRegisterEmployee_InvalidDobFormat() {
+    public void testRegisterEmployee_FirstNameWithNumbers() {
         EmployeeProfile profile = new EmployeeProfile(
             null, "EMP101", "john.doe@company.com", "Password123",
-            "John", "Doe", "not-a-date", "Java Developer", "Engineering", "Java", 3.0
+            "John123", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
         RuntimeException ex = assertThrows(
@@ -222,7 +222,120 @@ public class CandidateServiceTest {
             () -> candidateService.registerEmployee(profile)
         );
 
-        assertEquals("Invalid Date of Birth format! Must be YYYY-MM-DD.", ex.getMessage());
+        assertEquals("First Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_LastNameWithSpecialChars() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe@#$", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Last Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_ShortPassword() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Password must be at least 6 characters long!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_InvalidEmployeeIdFormat() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP 101!", "john.doe@company.com", "Password123",
+            "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Employee ID must contain only alphanumeric characters, underscores, or hyphens!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_FutureDob() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "2099-01-01", "Java Developer", "Engineering", "Java", 3.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Date of Birth cannot be in the future!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_UnderageDob() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "2020-01-01", "Java Developer", "Engineering", "Java", 3.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Candidate must be at least 18 years old!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testRegisterEmployee_ExcessiveExperience() {
+        EmployeeProfile profile = new EmployeeProfile(
+            null, "EMP101", "john.doe@company.com", "Password123",
+            "John", "Doe", "1980-01-01", "Java Developer", "Engineering", "Java", 65.0
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.registerEmployee(profile)
+        );
+
+        assertEquals("Experience years must be between 0 and 60!", ex.getMessage());
+        verify(employeeProfileRepository, never()).save(any());
+    }
+
+    @Test
+    public void testUpdateProfile_InvalidFirstName() {
+        EmployeeProfile existing = new EmployeeProfile(1L, "EMP101", "john@company.com", "Pass123", "John", "Doe", "1995-05-15", "Desig", "Dept", "Skills", 3.0);
+        EmployeeProfile updated = new EmployeeProfile();
+        updated.setFirstName("John999");
+
+        when(employeeProfileRepository.findByEmployeeId("EMP101")).thenReturn(Optional.of(existing));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> candidateService.updateProfile("EMP101", updated)
+        );
+
+        assertEquals("First Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!", ex.getMessage());
         verify(employeeProfileRepository, never()).save(any());
     }
 

@@ -75,14 +75,25 @@ public class AdminService {
         return adminRepository.findByEmail(email.trim());
     }
 
+    private void validateDesignationName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new RuntimeException("Designation name is required!");
+        }
+        String trimmed = name.trim();
+        if (trimmed.length() < 2) {
+            throw new RuntimeException("Designation name must be at least 2 characters long!");
+        }
+        if (!trimmed.matches("^[a-zA-Z0-9\\s&/-]+$")) {
+            throw new RuntimeException("Designation name contains invalid characters!");
+        }
+    }
+
     // Designation Master Management
     public Designation addDesignation(Designation designation) {
         if (designation == null) {
             throw new RuntimeException("Designation object cannot be null!");
         }
-        if (designation.getName() == null || designation.getName().trim().isEmpty()) {
-            throw new RuntimeException("Designation name is required!");
-        }
+        validateDesignationName(designation.getName());
         String name = designation.getName().trim();
         Optional<Designation> existing = designationRepository.findByNameIgnoreCase(name);
         if (existing.isPresent()) {
@@ -108,6 +119,7 @@ public class AdminService {
         if (optional.isPresent()) {
             Designation designation = optional.get();
             if (updated.getName() != null && !updated.getName().trim().isEmpty()) {
+                validateDesignationName(updated.getName());
                 String newName = updated.getName().trim();
                 Optional<Designation> existing = designationRepository.findByNameIgnoreCase(newName);
                 if (existing.isPresent() && !existing.get().getId().equals(id)) {

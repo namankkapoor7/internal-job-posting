@@ -205,4 +205,117 @@ public class JobPostingServiceTest {
         assertEquals("Job ID cannot be null!", ex.getMessage());
         verify(jobPostingRepository, never()).save(any());
     }
+
+    @Test
+    public void testCreateJob_MissingTitle() {
+        JobPosting job = new JobPosting(
+            null, "JOB106", "", "Description", "Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Job title is required!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_MissingLocation() {
+        JobPosting job = new JobPosting(
+            null, "JOB107", "Title", "Description", "Developer",
+            "Engineering", "   ", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Job location is required!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_MissingDescription() {
+        JobPosting job = new JobPosting(
+            null, "JOB108", "Title", "", "Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Job description is required!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testCreateJob_MissingExperience() {
+        JobPosting job = new JobPosting(
+            null, "JOB109", "Title", "Description", "Developer",
+            "Engineering", "Bangalore", "Java", "",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.createJob(job)
+        );
+
+        assertEquals("Job experience requirement is required!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testUpdateJob_NegativeSalary() {
+        JobPosting existingJob = new JobPosting(
+            1L, "JOB101", "Developer Role", "Job Description", "Java Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        JobPosting update = new JobPosting();
+        update.setSalaryMin(-1000.0);
+
+        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(existingJob));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.updateJob(1L, update)
+        );
+
+        assertEquals("Minimum salary cannot be negative!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
+
+    @Test
+    public void testUpdateJob_InvertedSalaryRange() {
+        JobPosting existingJob = new JobPosting(
+            1L, "JOB101", "Developer Role", "Job Description", "Java Developer",
+            "Engineering", "Bangalore", "Java", "2 years",
+            50000.0, 80000.0, "OPEN"
+        );
+
+        JobPosting update = new JobPosting();
+        update.setSalaryMin(100000.0);
+        update.setSalaryMax(40000.0);
+
+        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(existingJob));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> jobPostingService.updateJob(1L, update)
+        );
+
+        assertEquals("Maximum salary cannot be less than minimum salary!", ex.getMessage());
+        verify(jobPostingRepository, never()).save(any());
+    }
 }

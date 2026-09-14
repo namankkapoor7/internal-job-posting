@@ -56,8 +56,40 @@ export class AddJobComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (!this.job.title || !this.job.title.trim()) {
+      this.errorMessage = 'Please enter a Posting Title.';
+      return;
+    }
+
     if (!this.job.designation) {
       this.errorMessage = 'Please select a Designation / Role.';
+      return;
+    }
+
+    if (!this.job.location || !this.job.location.trim()) {
+      this.errorMessage = 'Please enter a Work Location.';
+      return;
+    }
+
+    if (!this.job.description || !this.job.description.trim()) {
+      this.errorMessage = 'Please enter a Job Description.';
+      return;
+    }
+
+    if (!this.job.experience || !this.job.experience.trim()) {
+      this.errorMessage = 'Please enter Experience Required.';
+      return;
+    }
+
+    if (this.job.salaryMin !== undefined && this.job.salaryMin !== null && this.job.salaryMin < 0) {
+      this.errorMessage = 'Minimum salary cannot be negative.';
+      return;
+    }
+
+    if (this.job.salaryMin !== undefined && this.job.salaryMin !== null &&
+        this.job.salaryMax !== undefined && this.job.salaryMax !== null &&
+        this.job.salaryMax < this.job.salaryMin) {
+      this.errorMessage = 'Maximum salary cannot be less than Minimum salary.';
       return;
     }
 

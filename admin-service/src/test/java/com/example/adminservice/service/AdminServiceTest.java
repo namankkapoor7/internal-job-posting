@@ -160,4 +160,46 @@ public class AdminServiceTest {
         assertEquals("Designation with ID 99 not found!", ex.getMessage());
         verify(designationRepository, never()).save(any());
     }
+
+    @Test
+    public void testAddDesignation_TooShortName() {
+        Designation desig = new Designation(null, "A", "ACTIVE");
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.addDesignation(desig)
+        );
+
+        assertEquals("Designation name must be at least 2 characters long!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
+    }
+
+    @Test
+    public void testAddDesignation_InvalidCharacters() {
+        Designation desig = new Designation(null, "Developer<Script>", "ACTIVE");
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.addDesignation(desig)
+        );
+
+        assertEquals("Designation name contains invalid characters!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
+    }
+
+    @Test
+    public void testUpdateDesignation_InvalidCharacters() {
+        Designation existing = new Designation(1L, "QA Lead", "ACTIVE");
+        when(designationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        Designation update = new Designation(null, "QA Lead @#$", "ACTIVE");
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> adminService.updateDesignation(1L, update)
+        );
+
+        assertEquals("Designation name contains invalid characters!", ex.getMessage());
+        verify(designationRepository, never()).save(any());
+    }
 }

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 
 @Service
@@ -60,46 +62,92 @@ public class CandidateService {
     // AUTHENTICATION & EMPLOYEE PROFILE
     // =========================================================
 
+    private void validateCandidateProfileInput(String firstName, String lastName, String employeeId, String password, String email, String dob, Double experienceYears, boolean isRegistration) {
+        if (isRegistration || firstName != null) {
+            if (firstName == null || firstName.trim().isEmpty()) {
+                throw new RuntimeException("First Name is required!");
+            }
+            if (!firstName.trim().matches("^[a-zA-Z\\s'-]+$")) {
+                throw new RuntimeException("First Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!");
+            }
+        }
+
+        if (isRegistration || lastName != null) {
+            if (lastName == null || lastName.trim().isEmpty()) {
+                throw new RuntimeException("Last Name is required!");
+            }
+            if (!lastName.trim().matches("^[a-zA-Z\\s'-]+$")) {
+                throw new RuntimeException("Last Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!");
+            }
+        }
+
+        if (isRegistration) {
+            if (employeeId == null || employeeId.trim().isEmpty()) {
+                throw new RuntimeException("Employee ID is required!");
+            }
+            if (!employeeId.trim().matches("^[A-Za-z0-9_-]+$")) {
+                throw new RuntimeException("Employee ID must contain only alphanumeric characters, underscores, or hyphens!");
+            }
+
+            if (email == null || email.trim().isEmpty()) {
+                throw new RuntimeException("Company Email is required!");
+            }
+            String emailTrimmed = email.trim().toLowerCase();
+            if (!emailTrimmed.contains("@")) {
+                throw new RuntimeException("Invalid email format!");
+            }
+            if (!emailTrimmed.endsWith("@company.com")) {
+                throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
+            }
+
+            if (password == null || password.trim().isEmpty()) {
+                throw new RuntimeException("Password is required!");
+            }
+            if (password.trim().length() < 6) {
+                throw new RuntimeException("Password must be at least 6 characters long!");
+            }
+        }
+
+        if (experienceYears != null) {
+            if (experienceYears < 0.0 || experienceYears > 60.0) {
+                throw new RuntimeException("Experience years must be between 0 and 60!");
+            }
+        }
+
+        if (dob != null && !dob.trim().isEmpty()) {
+            if (!dob.trim().matches("\\d{4}-\\d{2}-\\d{2}")) {
+                throw new RuntimeException("Invalid Date of Birth format! Must be YYYY-MM-DD.");
+            }
+            try {
+                LocalDate birthDate = LocalDate.parse(dob.trim());
+                if (birthDate.getYear() < 1900) {
+                    throw new RuntimeException("Birth year must be 1900 or later!");
+                }
+                if (birthDate.isAfter(LocalDate.now())) {
+                    throw new RuntimeException("Date of Birth cannot be in the future!");
+                }
+                if (Period.between(birthDate, LocalDate.now()).getYears() < 18) {
+                    throw new RuntimeException("Candidate must be at least 18 years old!");
+                }
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new RuntimeException("Invalid Date of Birth format! Must be YYYY-MM-DD.");
+            }
+        }
+    }
+
     public EmployeeProfile registerEmployee(EmployeeProfile profile) {
         if (profile == null) {
             throw new RuntimeException("Employee profile object cannot be null!");
         }
-        if (profile.getFirstName() == null || profile.getFirstName().trim().isEmpty()) {
-            throw new RuntimeException("First Name is required!");
-        }
-        if (profile.getLastName() == null || profile.getLastName().trim().isEmpty()) {
-            throw new RuntimeException("Last Name is required!");
-        }
-        if (profile.getEmployeeId() == null || profile.getEmployeeId().trim().isEmpty()) {
-            throw new RuntimeException("Employee ID is required!");
-        }
-        if (profile.getEmail() == null || profile.getEmail().trim().isEmpty()) {
-            throw new RuntimeException("Company Email is required!");
-        }
-        if (profile.getPassword() == null || profile.getPassword().trim().isEmpty()) {
-            throw new RuntimeException("Password is required!");
-        }
+
+        validateCandidateProfileInput(
+            profile.getFirstName(), profile.getLastName(), profile.getEmployeeId(),
+            profile.getPassword(), profile.getEmail(), profile.getDob(),
+            profile.getExperienceYears(), true
+        );
 
         String email = profile.getEmail().trim().toLowerCase();
         String empId = profile.getEmployeeId().trim().toUpperCase();
-
-        if (!email.contains("@")) {
-            throw new RuntimeException("Invalid email format!");
-        }
-
-        if (!email.endsWith("@company.com")) {
-            throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
-        }
-
-        if (profile.getExperienceYears() != null && profile.getExperienceYears() < 0) {
-            throw new RuntimeException("Experience years cannot be negative!");
-        }
-
-        if (profile.getDob() != null && !profile.getDob().trim().isEmpty()) {
-            if (!profile.getDob().trim().matches("\\d{4}-\\d{2}-\\d{2}")) {
-                throw new RuntimeException("Invalid Date of Birth format! Must be YYYY-MM-DD.");
-            }
-        }
 
         if (employeeProfileRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new RuntimeException("An employee with email '" + email + "' already exists.");
@@ -172,8 +220,18 @@ public class CandidateService {
     }
 
     public EmployeeProfile updateProfile(String employeeId, EmployeeProfile updated) {
+        if (updated == null) {
+            throw new RuntimeException("Updated profile details cannot be null!");
+        }
+
         EmployeeProfile profile = employeeProfileRepository.findByEmployeeId(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee profile not found for ID: " + employeeId));
+
+        validateCandidateProfileInput(
+            updated.getFirstName(), updated.getLastName(), null,
+            null, null, updated.getDob(),
+            updated.getExperienceYears(), false
+        );
 
         if (updated.getFirstName() != null) profile.setFirstName(updated.getFirstName().trim());
         if (updated.getLastName() != null) profile.setLastName(updated.getLastName().trim());

@@ -29,10 +29,16 @@ export class RegisterComponent {
   errorMessage = '';
   successMessage = '';
 
+  maxDobDate = '';
+
   constructor(
     private candidateService: CandidateService,
     private router: Router
-  ) {}
+  ) {
+    const today = new Date();
+    const minAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    this.maxDobDate = minAgeDate.toISOString().split('T')[0];
+  }
 
   onSubmit(): void {
     this.errorMessage = '';
@@ -43,8 +49,19 @@ export class RegisterComponent {
       return;
     }
 
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(this.candidate.firstName.trim())) {
+      this.errorMessage = 'First Name can only contain letters, spaces, hyphens, and apostrophes.';
+      return;
+    }
+
     if (!this.candidate.lastName || !this.candidate.lastName.trim()) {
       this.errorMessage = 'Please enter your Last Name.';
+      return;
+    }
+
+    if (!nameRegex.test(this.candidate.lastName.trim())) {
+      this.errorMessage = 'Last Name can only contain letters, spaces, hyphens, and apostrophes.';
       return;
     }
 
@@ -53,8 +70,38 @@ export class RegisterComponent {
       return;
     }
 
+    const dobDate = new Date(this.candidate.dob);
+    const today = new Date();
+    if (isNaN(dobDate.getTime())) {
+      this.errorMessage = 'Invalid Date of Birth format.';
+      return;
+    }
+    if (dobDate.getFullYear() < 1900) {
+      this.errorMessage = 'Year of birth must be 1900 or later.';
+      return;
+    }
+    if (dobDate > today) {
+      this.errorMessage = 'Date of Birth cannot be in the future.';
+      return;
+    }
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const monthDiff = today.getMonth() - dobDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    if (age < 18) {
+      this.errorMessage = 'Employee must be at least 18 years old to register.';
+      return;
+    }
+
     if (!this.candidate.employeeId || !this.candidate.employeeId.trim()) {
       this.errorMessage = 'Please enter your Employee ID.';
+      return;
+    }
+
+    const empIdRegex = /^[A-Za-z0-9_-]+$/;
+    if (!empIdRegex.test(this.candidate.employeeId.trim())) {
+      this.errorMessage = 'Employee ID can only contain letters, numbers, underscores, and hyphens.';
       return;
     }
 
@@ -70,6 +117,11 @@ export class RegisterComponent {
 
     if (!this.candidate.password || !this.candidate.password.trim()) {
       this.errorMessage = 'Please enter a Password.';
+      return;
+    }
+
+    if (this.candidate.password.length < 6) {
+      this.errorMessage = 'Password must be at least 6 characters long.';
       return;
     }
 
