@@ -318,4 +318,5 @@ public class JobPostingServiceTest {
         assertEquals("Maximum salary cannot be less than minimum salary!", ex.getMessage());
         verify(jobPostingRepository, never()).save(any());
     }
+
 }

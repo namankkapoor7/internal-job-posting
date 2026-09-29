@@ -1,91 +1,200 @@
-<div class="container" style="max-width: 650px;">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Create Internal Job Posting</span>
-      <a routerLink="/admin-dashboard" class="btn btn-secondary btn-sm">Cancel</a>
+<div class="container py-4" style="max-width: 780px;">
+  <div class="card shadow-sm border rounded-3">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3 px-4 border-bottom rounded-top-3">
+      <div>
+        <h4 class="fw-bold mb-0 text-white"><i class="fa-solid fa-briefcase me-2"></i>Create Internal Job Posting</h4>
+        <p class="small text-white-50 mb-0">Define role requirements, compensation, and publish internally</p>
+      </div>
+      <a routerLink="/admin-dashboard" class="btn btn-outline-light btn-sm px-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+      </a>
     </div>
 
-    <div *ngIf="errorMessage" class="badge badge-rejected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none;">
-      {{ errorMessage }}
+    <div class="card-body p-4">
+
+      <!-- Success Alert -->
+      <div *ngIf="successMessage" class="alert alert-success shadow-sm mb-4 py-2 small" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>{{ successMessage }}
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i>{{ errorMessage }}
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #jobForm="ngForm" autocomplete="off">
+        
+        <!-- Section 1: General Job Details -->
+        <div class="border-bottom pb-3 mb-3">
+          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-layer-group me-2"></i>Role Specification</h6>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="jobId" class="form-label fw-semibold small">Job Code / Reference ID</label>
+              <div class="input-group">
+                <input type="text" class="form-control bg-light" id="jobId" name="jobId" [(ngModel)]="job.jobId" placeholder="JOB-101" readonly />
+                <span class="input-group-text bg-light text-muted small"><i class="fa-solid fa-lock me-1"></i> Auto</span>
+              </div>
+              <div class="form-text extra-small text-muted">Sequential ID generated automatically by system.</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="designation" class="form-label fw-semibold small">Designation Master <span class="text-danger">*</span></label>
+              <select class="form-select form-control" [class.is-invalid]="desigModel.invalid && (desigModel.dirty || desigModel.touched)" id="designation" name="designation" [(ngModel)]="job.designation" #desigModel="ngModel" required>
+                <option value="">-- Select Designation --</option>
+                <option *ngFor="let d of activeDesignations" [value]="d.name">{{ d.name }}</option>
+                <option value="Senior Java Microservices Engineer">Senior Java Microservices Engineer</option>
+                <option value="Lead Backend Architect">Lead Backend Architect</option>
+                <option value="UI/UX Front End Specialist">UI/UX Front End Specialist</option>
+                <option value="DevOps & Cloud Infrastructure Lead">DevOps & Cloud Infrastructure Lead</option>
+                <option value="Full Stack Software Engineer">Full Stack Software Engineer</option>
+                <option value="Data Platform & Analytics Engineer">Data Platform & Analytics Engineer</option>
+              </select>
+              <div *ngIf="desigModel.invalid && (desigModel.dirty || desigModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+                Please select a valid Designation / Role.
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3 position-relative">
+            <label for="title" class="form-label fw-semibold small">Posting Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [class.is-invalid]="titleModel.invalid && (titleModel.dirty || titleModel.touched)" id="title" name="title" [(ngModel)]="job.title" #titleModel="ngModel" required minlength="3" (input)="onTitleInput(job.title)" (blur)="hideTitleSuggestions()" placeholder="e.g. Senior Java Microservices Lead" autocomplete="off" />
+            <div *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+              Posting Title is required (minimum 3 characters).
+            </div>
+            
+            <!-- Typeahead Dropdown -->
+            <div *ngIf="showTitleSuggestions" class="dropdown-menu show w-100 shadow-lg mt-1" style="max-height: 200px; overflow-y: auto; z-index: 1050;">
+              <div class="dropdown-header small text-muted">Suggested Role Titles:</div>
+              <button *ngFor="let sug of filteredTitles" type="button" class="dropdown-item small" (mousedown)="selectTitleSuggestion(sug)">
+                <i class="fa-solid fa-magnifying-glass text-muted me-2"></i>{{ sug }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Department, Location & Experience -->
+        <div class="border-bottom pb-3 mb-3">
+          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-building me-2"></i>Department & Location</h6>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="department" class="form-label fw-semibold small">Department <span class="text-danger">*</span></label>
+              <select class="form-select form-control" [class.is-invalid]="deptModel.invalid && (deptModel.dirty || deptModel.touched)" id="department" name="department" [(ngModel)]="job.department" #deptModel="ngModel" required>
+                <option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</option>
+              </select>
+              <div *ngIf="deptModel.invalid && (deptModel.dirty || deptModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+                Please select a department.
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="location" class="form-label fw-semibold small">Work Location <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" [class.is-invalid]="locModel.invalid && (locModel.dirty || locModel.touched)" id="location" name="location" [(ngModel)]="job.location" #locModel="ngModel" list="locationList" required placeholder="e.g. Bangalore, Remote" />
+              <datalist id="locationList">
+                <option *ngFor="let loc of locationSuggestions" [value]="loc"></option>
+              </datalist>
+              <div *ngIf="locModel.invalid && (locModel.dirty || locModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+                Work Location is required.
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="experience" class="form-label fw-semibold small">Experience Required <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" [class.is-invalid]="expModel.invalid && (expModel.dirty || expModel.touched)" id="experience" name="experience" [(ngModel)]="job.experience" #expModel="ngModel" required placeholder="e.g. 3-5 years" />
+              <div *ngIf="expModel.invalid && (expModel.dirty || expModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+                Experience field is required.
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="skillSet" class="form-label fw-semibold small">Required Skill Set (Comma Separated) <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [class.is-invalid]="skillModel.invalid && (skillModel.dirty || skillModel.touched)" id="skillSet" name="skillSet" [(ngModel)]="job.skillSet" #skillModel="ngModel" required placeholder="e.g. Java, Spring Boot, Angular, Microservices" />
+            <div *ngIf="skillModel.invalid && (skillModel.dirty || skillModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+              Please enter required skills.
+            </div>
+
+            <!-- Skill Tags Preview -->
+            <div *ngIf="skillPills.length > 0" class="mt-2 d-flex flex-wrap gap-1">
+              <span *ngFor="let pill of skillPills" class="badge bg-primary text-white rounded-pill px-2 py-1 small">
+                <i class="fa-solid fa-code me-1 extra-small"></i>{{ pill }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Detailed Description -->
+        <div class="border-bottom pb-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-align-left me-2"></i>Job Description</h6>
+            <span class="extra-small text-muted" [class.text-danger]="descriptionError">
+              {{ job.description ? job.description.trim().length : 0 }} / 20 chars min
+            </span>
+          </div>
+          <textarea class="form-control" [class.is-invalid]="descriptionError && (descModel.dirty || descModel.touched)" id="description" name="description" [(ngModel)]="job.description" #descModel="ngModel" rows="4" required placeholder="Provide role overview, key responsibilities, qualifications, and project context..."></textarea>
+          <div *ngIf="descriptionError && (descModel.dirty || descModel.touched)" class="invalid-feedback d-block extra-small mt-1">
+            {{ descriptionError }}
+          </div>
+        </div>
+
+        <!-- Section 4: Compensation & Lifecycle -->
+        <div class="mb-4">
+          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-indian-rupee-sign me-2"></i>Compensation & Lifecycle</h6>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="salaryMin" class="form-label fw-semibold small">Salary Min (Annual ₹)</label>
+              <input type="number" class="form-control" [class.is-invalid]="salaryError" id="salaryMin" name="salaryMin" [(ngModel)]="job.salaryMin" placeholder="e.g. 500000" step="50000" />
+              <div class="form-text extra-small text-muted" *ngIf="job.salaryMin">
+                ₹{{ (job.salaryMin / 100000) | number:'1.1-2' }} Lakhs / Annum
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="salaryMax" class="form-label fw-semibold small">Salary Max (Annual ₹)</label>
+              <input type="number" class="form-control" [class.is-invalid]="salaryError" id="salaryMax" name="salaryMax" [(ngModel)]="job.salaryMax" placeholder="e.g. 1500000" step="50000" />
+              <div class="form-text extra-small text-muted" *ngIf="job.salaryMax">
+                ₹{{ (job.salaryMax / 100000) | number:'1.1-2' }} Lakhs / Annum
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="status" class="form-label fw-semibold small">Lifecycle Status <span class="text-danger">*</span></label>
+              <select class="form-select form-control" id="status" name="status" [(ngModel)]="job.status" required>
+                <option value="PUBLISHED">PUBLISHED (Active)</option>
+                <option value="DRAFT">DRAFT (Internal Review)</option>
+                <option value="PAUSED">PAUSED (On Hold)</option>
+                <option value="CLOSED">CLOSED (Completed)</option>
+              </select>
+            </div>
+          </div>
+
+          <div *ngIf="salaryError" class="alert alert-warning py-1 px-3 extra-small mb-3 shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ salaryError }}
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="closingDate" class="form-label fw-semibold small">Application Deadline (Optional)</label>
+              <input type="date" class="form-control" id="closingDate" name="closingDate" [(ngModel)]="job.closingDate" [min]="minClosingDate" />
+              <div class="form-text extra-small text-muted">Applications close on midnight of selected date.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit & Actions -->
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <a routerLink="/admin-dashboard" class="btn btn-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold" [disabled]="!jobForm.form.valid || !isFormValid() || isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <i *ngIf="!isSubmitting" class="fa-solid fa-paper-plane me-2"></i>
+            {{ isSubmitting ? 'Creating Job Posting...' : 'Publish Job Posting' }}
+          </button>
+        </div>
+
+      </form>
     </div>
-
-    <form (ngSubmit)="onSubmit()">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>Job Code / Reference ID</label>
-          <input type="text" class="form-control" placeholder="Auto-generated if empty (e.g. JOB-104)" [(ngModel)]="job.jobId" name="jobId">
-        </div>
-
-        <div class="form-group">
-          <label>Designation Master *</label>
-          <select class="form-control" [(ngModel)]="job.designation" name="designation" required>
-            <option value="">-- Select Designation --</option>
-            <option *ngFor="let d of activeDesignations" [value]="d.name">{{ d.name }}</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Posting Title</label>
-        <input type="text" class="form-control" placeholder="e.g. Senior Java Microservices Engineer" [(ngModel)]="job.title" name="title">
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>Department</label>
-          <input type="text" class="form-control" placeholder="e.g. Engineering, UX Design" [(ngModel)]="job.department" name="dept">
-        </div>
-
-        <div class="form-group">
-          <label>Work Location *</label>
-          <input type="text" class="form-control" placeholder="e.g. Bangalore, Remote, Noida" [(ngModel)]="job.location" name="location" required>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Job Description *</label>
-        <textarea class="form-control" rows="4" placeholder="Detail the key responsibilities and role requirements..." [(ngModel)]="job.description" name="desc" required></textarea>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>Required Skill Set *</label>
-          <input type="text" class="form-control" placeholder="e.g. Java, Spring Boot, Microservices" [(ngModel)]="job.skillSet" name="skills" required>
-        </div>
-
-        <div class="form-group">
-          <label>Experience Required *</label>
-          <input type="text" class="form-control" placeholder="e.g. 3-5 years" [(ngModel)]="job.experience" name="exp" required>
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>Salary Min (Annual ₹)</label>
-          <input type="number" class="form-control" [(ngModel)]="job.salaryMin" name="salMin">
-        </div>
-        <div class="form-group">
-          <label>Salary Max (Annual ₹)</label>
-          <input type="number" class="form-control" [(ngModel)]="job.salaryMax" name="salMax">
-        </div>
-        <div class="form-group">
-          <label>Lifecycle Status *</label>
-          <select class="form-control" [(ngModel)]="job.status" name="status">
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="PAUSED">PAUSED</option>
-            <option value="CLOSED">CLOSED</option>
-          </select>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-        <a routerLink="/admin-dashboard" class="btn btn-secondary btn-sm">Cancel</a>
-        <button type="submit" class="btn btn-primary btn-sm" [disabled]="isSubmitting">
-          <span *ngIf="isSubmitting">Saving Job Posting...</span>
-          <span *ngIf="!isSubmitting">Create Job Posting</span>
-        </button>
-      </div>
-    </form>
   </div>
 </div>
+
