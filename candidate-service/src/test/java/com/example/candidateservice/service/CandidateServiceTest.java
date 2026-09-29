@@ -62,7 +62,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_Success() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -81,13 +81,13 @@ public class CandidateServiceTest {
     @Test
     public void testLoginEmployee_Success() {
         EmployeeProfile profile = new EmployeeProfile(
-            1L, "EMP101", "john.doe@company.com", encoder.encode("Password123"),
+            1L, "EMP101", "john.doe@company.com", encoder.encode("Password123!"),
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
         when(employeeProfileRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(Optional.of(profile));
 
-        Map<String, Object> result = candidateService.loginEmployee("john.doe@company.com", "Password123");
+        Map<String, Object> result = candidateService.loginEmployee("john.doe@company.com", "Password123!");
 
         assertNotNull(result);
         assertNotNull(result.get("token"));
@@ -97,7 +97,7 @@ public class CandidateServiceTest {
     @Test
     public void testApplyForJob_Success() {
         EmployeeProfile profile = new EmployeeProfile(
-            1L, "EMP101", "john.doe@company.com", "Password123",
+            1L, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -149,7 +149,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_MissingFirstName() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -165,7 +165,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_MalformedEmail() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "notanemail", "Password123",
+            null, "EMP101", "notanemail", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -181,7 +181,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_InvalidEmailDomain() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@gmail.com", "Password123",
+            null, "EMP101", "john.doe@gmail.com", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -197,7 +197,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_NegativeExperience() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", -2.5
         );
 
@@ -213,7 +213,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_FirstNameWithNumbers() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John123", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -229,7 +229,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_LastNameWithSpecialChars() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe@#$", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -254,14 +254,14 @@ public class CandidateServiceTest {
             () -> candidateService.registerEmployee(profile)
         );
 
-        assertEquals("Password must be at least 6 characters long!", ex.getMessage());
+        assertEquals("Password must be at least 8 characters long!", ex.getMessage());
         verify(employeeProfileRepository, never()).save(any());
     }
 
     @Test
     public void testRegisterEmployee_InvalidEmployeeIdFormat() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP 101!", "john.doe@company.com", "Password123",
+            null, "EMP 101!", "john.doe@company.com", "Password123!",
             "John", "Doe", "1995-05-15", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -277,7 +277,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_FutureDob() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "2099-01-01", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -293,7 +293,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_UnderageDob() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "2020-01-01", "Java Developer", "Engineering", "Java", 3.0
         );
 
@@ -309,7 +309,7 @@ public class CandidateServiceTest {
     @Test
     public void testRegisterEmployee_ExcessiveExperience() {
         EmployeeProfile profile = new EmployeeProfile(
-            null, "EMP101", "john.doe@company.com", "Password123",
+            null, "EMP101", "john.doe@company.com", "Password123!",
             "John", "Doe", "1980-01-01", "Java Developer", "Engineering", "Java", 65.0
         );
 

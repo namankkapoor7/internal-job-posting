@@ -1,11 +1,18 @@
 <header class="app-header">
   <div class="header-container">
     <a routerLink="/" class="brand-title">
-      Internal Job Posting <span class="brand-badge">Enterprise</span>
+      <div class="brand-icon">
+        <i class="fa-solid fa-briefcase"></i>
+      </div>
+      <span class="brand-name">CareerPortal</span>
     </a>
 
     <nav>
       <ul class="nav-links">
+        <!-- Common Route -->
+        <li class="nav-item"><a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Jobs</a></li>
+        <li class="nav-item"><a routerLink="/about" routerLinkActive="active">About Us</a></li>
+
         <!-- Unauthenticated -->
         <ng-container *ngIf="!authService.isLoggedIn()">
           <li class="nav-item"><a routerLink="/login" routerLinkActive="active">Sign In</a></li>
@@ -15,7 +22,6 @@
         <!-- Employee Navigation -->
         <ng-container *ngIf="authService.isEmployee()">
           <li class="nav-item"><a routerLink="/employee-dashboard" routerLinkActive="active">Dashboard</a></li>
-          <li class="nav-item"><a routerLink="/jobs" routerLinkActive="active">Jobs</a></li>
           <li class="nav-item"><a routerLink="/my-applications" routerLinkActive="active">My Applications</a></li>
           <li class="nav-item"><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
           <li class="nav-item"><a routerLink="/notifications" routerLinkActive="active">Notifications</a></li>
@@ -24,7 +30,7 @@
         <!-- HR Navigation -->
         <ng-container *ngIf="authService.isAdmin()">
           <li class="nav-item"><a routerLink="/admin-dashboard" routerLinkActive="active">Dashboard</a></li>
-          <li class="nav-item"><a routerLink="/add-job" routerLinkActive="active">Job Postings</a></li>
+          <li class="nav-item"><a routerLink="/add-job" routerLinkActive="active">Post Job</a></li>
           <li class="nav-item"><a routerLink="/hr-applications" routerLinkActive="active">Applications</a></li>
           <li class="nav-item"><a routerLink="/hr-interviews" routerLinkActive="active">Interviews</a></li>
           <li class="nav-item"><a routerLink="/hr-designations" routerLinkActive="active">Designations</a></li>
@@ -35,10 +41,13 @@
     <div class="user-controls">
       <ng-container *ngIf="authService.isLoggedIn()">
         <span class="user-info">
+          <i class="fa-solid fa-user-circle me-1 text-slate-300"></i>
           {{ authService.currentUserValue?.name }}
           <span class="user-role-tag" *ngIf="!authService.currentUserValue?.name?.toLowerCase()?.includes('admin')">{{ authService.currentUserValue?.role }}</span>
         </span>
-        <button (click)="onLogout()" class="btn-logout">Sign Out</button>
+        <button (click)="onLogout()" class="btn-logout">
+          <i class="fa-solid fa-right-from-bracket me-1"></i> Sign Out
+        </button>
       </ng-container>
       <ng-container *ngIf="!authService.isLoggedIn()">
         <a routerLink="/login" class="btn btn-primary btn-sm">Sign In</a>
@@ -50,3 +59,26 @@
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
+
+<footer class="app-footer bg-slate-900 text-slate-300 py-4 mt-5 border-top border-slate-800">
+  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2">
+      <div class="brand-icon-sm bg-indigo-600 text-white p-1 rounded">
+        <i class="fa-solid fa-briefcase"></i>
+      </div>
+      <span class="fw-bold text-white">Internal Career Portal</span>
+      <span class="text-slate-500 small">| Empowering Internal Mobility</span>
+    </div>
+
+    <div class="footer-links d-flex gap-3 extra-small">
+      <a routerLink="/jobs" class="text-slate-400 hover:text-white">Explore Jobs</a>
+      <a routerLink="/about" class="text-slate-400 hover:text-white">About System</a>
+      <a routerLink="/register" class="text-slate-400 hover:text-white">Employee Register</a>
+      <a routerLink="/login" class="text-slate-400 hover:text-white">HR Login</a>
+    </div>
+
+    <div class="extra-small text-slate-500">
+      &copy; 2026 Internal Job Posting System. All rights reserved.
+    </div>
+  </div>
+</footer>

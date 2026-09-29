@@ -72,10 +72,7 @@ public class CandidateService {
             }
         }
 
-        if (isRegistration || lastName != null) {
-            if (lastName == null || lastName.trim().isEmpty()) {
-                throw new RuntimeException("Last Name is required!");
-            }
+        if (lastName != null && !lastName.trim().isEmpty()) {
             if (!lastName.trim().matches("^[a-zA-Z\\s'-]+$")) {
                 throw new RuntimeException("Last Name must contain only alphabetic characters, spaces, hyphens, or apostrophes!");
             }
@@ -103,8 +100,21 @@ public class CandidateService {
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("Password is required!");
             }
-            if (password.trim().length() < 6) {
-                throw new RuntimeException("Password must be at least 6 characters long!");
+            String pwd = password.trim();
+            if (pwd.length() < 8) {
+                throw new RuntimeException("Password must be at least 8 characters long!");
+            }
+            if (!pwd.matches(".*[A-Z].*")) {
+                throw new RuntimeException("Password must contain at least one uppercase letter!");
+            }
+            if (!pwd.matches(".*[a-z].*")) {
+                throw new RuntimeException("Password must contain at least one lowercase letter!");
+            }
+            if (!pwd.matches(".*[0-9].*")) {
+                throw new RuntimeException("Password must contain at least one digit!");
+            }
+            if (!pwd.matches(".*[!@#$%^&*(),.?\"{}|<>_\\-].*")) {
+                throw new RuntimeException("Password must contain at least one special character!");
             }
         }
 

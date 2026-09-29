@@ -1,0 +1,43 @@
+.about-page-container {
+  font-family: inherit;
+}
+
+.icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-color, #4f46e5);
+  color: #ffffff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.custom-check-list li {
+  font-size: 14px;
+  color: #334155;
+}
+
+.bg-primary-subtle { background-color: #eef2ff !important; }
+.bg-success-subtle { background-color: #ecfdf5 !important; }
+.bg-purple-subtle { background-color: #f3e8ff !important; }
+.text-purple { color: #9333ea !important; }

@@ -9,12 +9,14 @@ import { AddJobComponent } from './components/add-job/add-job.component';
 import { ViewCandidatesComponent } from './components/view-candidates/view-candidates.component';
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { AboutComponent } from './components/about/about.component';
 import { adminGuard, employeeGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'about', component: AboutComponent },
   { path: 'jobs', component: HomeComponent },
   { path: 'apply', component: ApplyComponent, canActivate: [employeeGuard] },
   { path: 'my-applications', component: ApplyComponent, canActivate: [employeeGuard] },
@@ -29,3 +31,4 @@ export const routes: Routes = [
   { path: 'candidates/:jobId', component: ViewCandidatesComponent, canActivate: [adminGuard] },
   { path: '**', redirectTo: '' }
 ];
+

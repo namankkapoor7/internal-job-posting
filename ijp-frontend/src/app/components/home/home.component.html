@@ -1,125 +1,170 @@
-<div class="container">
-  <!-- Page Header -->
-  <div style="margin-bottom: 24px;">
-    <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">Internal Job Opportunities</h2>
-    <p style="color: var(--text-secondary); font-size: 13px;">Browse published roles and submit your application internally.</p>
-  </div>
-
-  <!-- Search & Filter Card -->
-  <div class="card" style="margin-bottom: 24px;">
-    <form (ngSubmit)="fetchJobs()" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) 120px 100px; gap: 12px; align-items: end;">
-      <div class="form-group" style="margin-bottom: 0;">
-        <label>Designation / Role</label>
-        <input type="text" class="form-control" placeholder="e.g. Java Full Stack" [(ngModel)]="filterDesignation" name="designation">
-      </div>
-
-      <div class="form-group" style="margin-bottom: 0;">
-        <label>Location</label>
-        <input type="text" class="form-control" placeholder="e.g. Bangalore, Remote" [(ngModel)]="filterLocation" name="location">
-      </div>
-
-      <div class="form-group" style="margin-bottom: 0;">
-        <label>Required Skill</label>
-        <input type="text" class="form-control" placeholder="e.g. Spring Boot, Angular" [(ngModel)]="filterSkill" name="skill">
-      </div>
-
-      <button type="submit" class="btn btn-primary btn-sm" style="height: 38px;">Search</button>
-      <button type="button" (click)="resetFilters()" class="btn btn-secondary btn-sm" style="height: 38px;">Reset</button>
-    </form>
-  </div>
-
-  <!-- Job Listings Grid -->
-  <div *ngIf="isLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
-    Loading published positions...
-  </div>
-
-  <div *ngIf="!isLoading && jobs.length === 0" class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-    No published positions match your search criteria.
-  </div>
-
-  <div *ngIf="!isLoading && jobs.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
-    <div *ngFor="let job of jobs" class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <div>
-            <div style="font-size: 11px; font-weight: 600; color: var(--primary-color);">{{ job.jobId }}</div>
-            <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 2px;">{{ job.designation }}</h3>
-          </div>
-          <span class="badge badge-published">PUBLISHED</span>
-        </div>
-
-        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-          <span>📍 {{ job.location }}</span> · <span>💼 {{ job.experience }}</span>
-          <span *ngIf="job.department"> · 🏢 {{ job.department }}</span>
-        </div>
-
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-          {{ job.description }}
+<div class="container py-4">
+  
+  <!-- Hero Banner -->
+  <div class="hero-banner p-4 p-md-5 rounded-4 bg-slate-900 text-white mb-4 shadow-md position-relative overflow-hidden">
+    <div class="row align-items-center position-relative" style="z-index: 2;">
+      <div class="col-lg-8">
+        <span class="badge bg-indigo-600 text-white px-3 py-2 mb-3">Internal Talent Marketplace</span>
+        <h1 class="fw-bold display-6 text-white mb-2">Internal Career Opportunities</h1>
+        <p class="text-slate-300 fs-6 mb-4">
+          Discover new roles, transition your skills, and grow your career within our organization with complete transparency.
         </p>
-
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Skills Required</div>
-          <div style="font-size: 12px; color: var(--text-primary); background: var(--bg-subtle); padding: 6px 10px; border-radius: var(--radius-sm);">
-            {{ job.skillSet }}
-          </div>
+        <div class="d-flex flex-wrap gap-3 extra-small text-slate-300">
+          <span><i class="fa-solid fa-circle-check text-indigo-400 me-1"></i> Verified Qualifications</span>
+          <span><i class="fa-solid fa-circle-check text-indigo-400 me-1"></i> Direct HR Referral</span>
+          <span><i class="fa-solid fa-circle-check text-indigo-400 me-1"></i> Transparent Stage Tracking</span>
         </div>
-      </div>
-
-      <div style="padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; font-weight: 500; color: var(--text-secondary);" *ngIf="job.salaryMin && job.salaryMax">
-          ₹{{ (job.salaryMin / 100000) | number:'1.1-1' }}L - ₹{{ (job.salaryMax / 100000) | number:'1.1-1' }}L
-        </span>
-        <button (click)="openApplyModal(job)" class="btn btn-primary btn-sm">Apply Now</button>
       </div>
     </div>
   </div>
 
-  <!-- Apply Modal -->
-  <div *ngIf="selectedJob" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-        <h3 style="font-size: 16px; font-weight: 600;">Submit Application</h3>
-        <button (click)="closeApplyModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">&times;</button>
+  <!-- Search & Filter Card -->
+  <div class="card shadow-sm border rounded-4 p-4 mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-bold text-slate-900 mb-0"><i class="fa-solid fa-magnifying-glass me-2 text-indigo-600"></i>Filter Open Positions</h6>
+      <span class="extra-small text-muted" *ngIf="jobs.length > 0">{{ jobs.length }} position(s) available</span>
+    </div>
+
+    <form (ngSubmit)="fetchJobs()" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label extra-small fw-bold text-slate-700 uppercase">Designation / Role</label>
+        <input type="text" class="form-control" placeholder="e.g. Full Stack Developer" [(ngModel)]="filterDesignation" name="designation">
       </div>
 
-      <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
-        <div style="font-weight: 600; font-size: 14px;">{{ selectedJob.designation }}</div>
-        <div style="font-size: 12px; color: var(--text-secondary);">Job Ref: {{ selectedJob.jobId }} · {{ selectedJob.location }}</div>
+      <div class="col-md-3">
+        <label class="form-label extra-small fw-bold text-slate-700 uppercase">Location</label>
+        <input type="text" class="form-control" placeholder="e.g. Bangalore, Remote" [(ngModel)]="filterLocation" name="location">
       </div>
 
-      <div *ngIf="errorMessage" class="badge badge-rejected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
-        {{ errorMessage }}
+      <div class="col-md-3">
+        <label class="form-label extra-small fw-bold text-slate-700 uppercase">Required Skill</label>
+        <input type="text" class="form-control" placeholder="e.g. Spring Boot, Angular" [(ngModel)]="filterSkill" name="skill">
       </div>
 
-      <div *ngIf="successMessage" class="badge badge-selected" style="width: 100%; padding: 8px; margin-bottom: 16px; text-transform: none; font-weight: normal;">
-        {{ successMessage }}
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary w-100 py-2">
+          <i class="fa-solid fa-filter me-1"></i> Apply Filter
+        </button>
+        <button type="button" (click)="resetFilters()" class="btn btn-secondary px-3 py-2">
+          Reset
+        </button>
       </div>
+    </form>
+  </div>
 
-      <form (ngSubmit)="submitApplication()">
-        <div class="form-group">
-          <label>Cover Note (Optional)</label>
-          <textarea class="form-control" rows="3" placeholder="Briefly state your motivation for this role..." [(ngModel)]="coverNote" name="note"></textarea>
-        </div>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5 my-4">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="small text-muted mt-2">Fetching open positions...</div>
+  </div>
 
-        <div class="form-group">
-          <label>Attached Document / Resume (Optional)</label>
-          <select class="form-control" [(ngModel)]="selectedDocumentId" name="docId" *ngIf="userDocuments.length > 0">
-            <option [ngValue]="null">-- No Document Attached --</option>
-            <option *ngFor="let doc of userDocuments" [value]="doc.id">{{ doc.fileName }} (Uploaded {{ doc.uploadedAt | date:'shortDate' }})</option>
-          </select>
-          <div *ngIf="userDocuments.length === 0" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-            No documents uploaded yet. You can attach documents from your Profile page.
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && jobs.length === 0" class="card text-center py-5 border rounded-4 shadow-sm">
+    <div class="mb-3 text-muted">
+      <i class="fa-solid fa-folder-open fa-3x"></i>
+    </div>
+    <h5 class="fw-bold text-slate-900 mb-1">No Matching Positions Found</h5>
+    <p class="text-secondary small mb-3">Try clearing or adjusting your search filters to find available roles.</p>
+    <div>
+      <button (click)="resetFilters()" class="btn btn-primary btn-sm">Reset All Filters</button>
+    </div>
+  </div>
+
+  <!-- Job Listings Grid -->
+  <div *ngIf="!isLoading && jobs.length > 0" class="row g-4">
+    <div *ngFor="let job of jobs" class="col-md-6 col-lg-4 d-flex">
+      <div class="card w-100 border rounded-4 shadow-sm p-4 d-flex flex-column justify-content-between transition-hover">
+        <div>
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span class="badge badge-accent mb-1">{{ job.jobId }}</span>
+              <h5 class="fw-bold text-slate-900 mb-0 me-2" style="font-size: 16px;">{{ job.designation }}</h5>
+            </div>
+            <span class="badge badge-published">PUBLISHED</span>
+          </div>
+
+          <div class="extra-small text-slate-500 mb-3 d-flex flex-wrap gap-2">
+            <span><i class="fa-solid fa-location-dot me-1 text-slate-400"></i>{{ job.location }}</span>
+            <span>·</span>
+            <span><i class="fa-solid fa-user-gear me-1 text-slate-400"></i>{{ job.experience }}</span>
+            <span *ngIf="job.department">·</span>
+            <span *ngIf="job.department"><i class="fa-solid fa-building me-1 text-slate-400"></i>{{ job.department }}</span>
+          </div>
+
+          <p class="small text-secondary mb-3 line-clamp-3">
+            {{ job.description }}
+          </p>
+
+          <div class="mb-3">
+            <div class="extra-small fw-bold text-slate-400 uppercase mb-1">Required Skills</div>
+            <div class="small text-slate-800 bg-slate-50 p-2 rounded-2 border">
+              {{ job.skillSet }}
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-          <button type="button" (click)="closeApplyModal()" class="btn btn-secondary btn-sm">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isApplying">
-            <span *ngIf="isApplying">Submitting...</span>
-            <span *ngIf="!isApplying">Confirm Application</span>
+        <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-3">
+          <div>
+            <span class="extra-small text-muted d-block">Annual Compensation</span>
+            <span class="small fw-bold text-slate-900" *ngIf="job.salaryMin && job.salaryMax">
+              ₹{{ (job.salaryMin / 100000) | number:'1.1-1' }}L - ₹{{ (job.salaryMax / 100000) | number:'1.1-1' }}L
+            </span>
+          </div>
+          <button (click)="openApplyModal(job)" class="btn btn-primary btn-sm px-3 fw-semibold">
+            Apply Now <i class="fa-solid fa-arrow-right ms-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Modal -->
+  <div *ngIf="selectedJob" class="modal-overlay">
+    <div class="modal-content">
+      <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <h5 class="fw-bold mb-0 text-slate-900">Submit Application</h5>
+        <button (click)="closeApplyModal()" class="btn-close" style="background: none; border: none; font-size: 20px; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <div class="bg-slate-50 p-3 rounded-3 mb-3 border">
+        <div class="fw-bold text-slate-900 small">{{ selectedJob.designation }}</div>
+        <div class="extra-small text-secondary">Job Ref: {{ selectedJob.jobId }} · {{ selectedJob.location }} · {{ selectedJob.department || 'General' }}</div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger py-2 small mb-3">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success py-2 small mb-3">
+        <i class="fa-solid fa-circle-check me-1"></i>{{ successMessage }}
+      </div>
+
+      <form (ngSubmit)="submitApplication()">
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-slate-700">Cover Note (Optional)</label>
+          <textarea class="form-control" rows="3" placeholder="Briefly state your motivation and relevant domain experience..." [(ngModel)]="coverNote" name="note"></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold small text-slate-700">Attach Verified Document / Resume (Optional)</label>
+          <select class="form-select form-control" [(ngModel)]="selectedDocumentId" name="docId" *ngIf="userDocuments.length > 0">
+            <option [ngValue]="null">-- Select Document --</option>
+            <option *ngFor="let doc of userDocuments" [value]="doc.id">{{ doc.fileName }} (Uploaded {{ doc.uploadedAt | date:'mediumDate' }})</option>
+          </select>
+          <div *ngIf="userDocuments.length === 0" class="extra-small text-muted mt-1">
+            No documents uploaded yet. You can upload resumes from your Profile page.
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <button type="button" (click)="closeApplyModal()" class="btn btn-secondary px-3">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold" [disabled]="isApplying">
+            <span *ngIf="isApplying" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            {{ isApplying ? 'Submitting Application...' : 'Confirm Application' }}
           </button>
         </div>
       </form>
     </div>
   </div>
+
 </div>

@@ -40,6 +40,76 @@ export class RegisterComponent {
     this.maxDobDate = minAgeDate.toISOString().split('T')[0];
   }
 
+  // Live Password Strength Criteria
+  get pwdHasMinLen(): boolean {
+    return !!(this.candidate.password && this.candidate.password.length >= 8);
+  }
+
+  get pwdHasUpper(): boolean {
+    return !!(this.candidate.password && /[A-Z]/.test(this.candidate.password));
+  }
+
+  get pwdHasLower(): boolean {
+    return !!(this.candidate.password && /[a-z]/.test(this.candidate.password));
+  }
+
+  get pwdHasNumber(): boolean {
+    return !!(this.candidate.password && /[0-9]/.test(this.candidate.password));
+  }
+
+  get pwdHasSpecial(): boolean {
+    return !!(this.candidate.password && /[!@#$%^&*(),.?":{}|<>\_\-]/.test(this.candidate.password));
+  }
+
+  get pwdScore(): number {
+    let score = 0;
+    if (this.pwdHasMinLen) score++;
+    if (this.pwdHasUpper) score++;
+    if (this.pwdHasLower) score++;
+    if (this.pwdHasNumber) score++;
+    if (this.pwdHasSpecial) score++;
+    return score;
+  }
+
+  get isPasswordValid(): boolean {
+    return this.pwdScore === 5;
+  }
+
+  get passwordsMatch(): boolean {
+    return !!(this.candidate.password && this.confirmPassword && this.candidate.password === this.confirmPassword);
+  }
+
+  isFormValid(): boolean {
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    const empIdRegex = /^[A-Za-z0-9_-]+$/;
+
+    if (!this.candidate.firstName || !this.candidate.firstName.trim() || !nameRegex.test(this.candidate.firstName.trim())) {
+      return false;
+    }
+
+    if (this.candidate.lastName && this.candidate.lastName.trim() && !nameRegex.test(this.candidate.lastName.trim())) {
+      return false;
+    }
+
+    if (!this.candidate.dob || !this.candidate.dob.trim()) {
+      return false;
+    }
+
+    if (!this.candidate.employeeId || !this.candidate.employeeId.trim() || !empIdRegex.test(this.candidate.employeeId.trim())) {
+      return false;
+    }
+
+    if (!this.candidate.email || !this.candidate.email.trim() || !this.candidate.email.trim().toLowerCase().endsWith('@company.com')) {
+      return false;
+    }
+
+    if (!this.isPasswordValid || !this.passwordsMatch) {
+      return false;
+    }
+
+    return true;
+  }
+
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -55,12 +125,8 @@ export class RegisterComponent {
       return;
     }
 
-    if (!this.candidate.lastName || !this.candidate.lastName.trim()) {
-      this.errorMessage = 'Please enter your Last Name.';
-      return;
-    }
-
-    if (!nameRegex.test(this.candidate.lastName.trim())) {
+    // Last Name is Optional
+    if (this.candidate.lastName && this.candidate.lastName.trim() && !nameRegex.test(this.candidate.lastName.trim())) {
       this.errorMessage = 'Last Name can only contain letters, spaces, hyphens, and apostrophes.';
       return;
     }
@@ -110,18 +176,20 @@ export class RegisterComponent {
       return;
     }
 
-    if (!this.candidate.email.trim().toLowerCase().endsWith('@company.com')) {
+    const emailTrimmed = this.candidate.email.trim().toLowerCase();
+    if (!emailTrimmed.endsWith('@company.com')) {
       this.errorMessage = 'Only company email addresses ending with @company.com are allowed.';
       return;
     }
 
-    if (!this.candidate.password || !this.candidate.password.trim()) {
-      this.errorMessage = 'Please enter a Password.';
+    // Prevent Admin email registration via employee registration route
+    if (emailTrimmed === 'admin@company.com' || emailTrimmed === 'hradmin@company.com') {
+      this.errorMessage = 'Registration with this email is not allowed.';
       return;
     }
 
-    if (this.candidate.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters long.';
+    if (!this.isPasswordValid) {
+      this.errorMessage = 'Password must be at least 8 characters long with uppercase, lowercase, number, and special character.';
       return;
     }
 
@@ -132,8 +200,12 @@ export class RegisterComponent {
 
     this.isSubmitting = true;
 
-    this.candidateService.registerEmployee(this.candidate).subscribe({
-      next: (res: any) => {
+    this.candidateService.registerEmployee({
+      ...this.candidate,
+      email: emailTrimmed,
+      employeeId: this.candidate.employeeId.trim().toUpperCase()
+    }).subscribe({
+      next: () => {
         this.isSubmitting = false;
         this.successMessage = 'Registration successful! Redirecting to login...';
         setTimeout(() => {
@@ -147,3 +219,4 @@ export class RegisterComponent {
     });
   }
 }
+

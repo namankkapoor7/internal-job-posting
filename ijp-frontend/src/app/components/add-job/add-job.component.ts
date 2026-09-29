@@ -45,7 +45,7 @@ export class AddJobComponent implements OnInit {
     'Full Stack Software Engineer',
     'Data Platform & Analytics Engineer',
     'QA Automation Architect',
-    'Product Manager - Enterprise Systems'
+    'Product Manager - Core Systems'
   ];
 
   departmentOptions: string[] = [
